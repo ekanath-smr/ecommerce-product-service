@@ -5,10 +5,15 @@ import com.example.ProductService.exceptions.InvalidProductIdException;
 import com.example.ProductService.exceptions.ProductAlreadyExistException;
 import com.example.ProductService.mappers.FakeStoreProductMapper;
 import com.example.ProductService.models.Product;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -40,7 +45,16 @@ public class FakeStoreProductService implements ProductService {
     @Override
     public List<Product> getAllProduct() {
         String url = "https://fakestoreapi.com/products";
-        List products = restTemplate.getForEntity(url, List.class).getBody();
+//        List products = restTemplate.getForEntity(url, List.class).getBody();
+//        return products;
+        ResponseEntity<List<FakeStoreProductDto>> response = restTemplate.exchange(url, HttpMethod.GET, null, new ParameterizedTypeReference<List<FakeStoreProductDto>>() {});
+        if(response.getBody() == null) {
+            return Collections.emptyList();
+        }
+        List<Product> products = new ArrayList<>();
+        for(FakeStoreProductDto fakeStoreProductDto : response.getBody()) {
+            products.add(FakeStoreProductMapper.mapFakeStoreProductDtoToProduct(fakeStoreProductDto));
+        }
         return products;
     }
 
