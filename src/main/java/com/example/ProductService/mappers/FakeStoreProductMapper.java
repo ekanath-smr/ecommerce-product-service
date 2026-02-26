@@ -6,9 +6,9 @@ import com.example.ProductService.models.Product;
 
 public class FakeStoreProductMapper {
     public static Product mapFakeStoreProductDtoToProduct(FakeStoreProductDto fakeStoreProductDto) {
-//        if(fakeStoreProductDto == null) {
-//            return null;
-//        }
+        if(fakeStoreProductDto == null) {
+            return null;
+        }
         Product product = new Product();
         product.setId(fakeStoreProductDto.getId());
         product.setTitle(fakeStoreProductDto.getTitle());
@@ -24,9 +24,9 @@ public class FakeStoreProductMapper {
     }
 
     public static FakeStoreProductDto mapProductToFakeStoreProductDto(Product product) {
-//        if(product == null) {
-//            return null;
-//        }
+        if(product == null) {
+            return null;
+        }
         FakeStoreProductDto fakeStoreProductDto = new FakeStoreProductDto();
         fakeStoreProductDto.setId(product.getId());
         fakeStoreProductDto.setTitle(product.getTitle());
