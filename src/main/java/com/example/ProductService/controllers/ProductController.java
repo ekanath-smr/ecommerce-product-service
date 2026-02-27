@@ -7,6 +7,8 @@ import com.example.ProductService.exceptions.ProductAlreadyExistException;
 import com.example.ProductService.mappers.FakeStoreProductMapper;
 import com.example.ProductService.models.Product;
 import com.example.ProductService.services.ProductService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,27 +26,30 @@ public class ProductController {
 
     // localhost:8080/products/{productId}
     @GetMapping("/{productId}")
-    public GetSingleProductResponseDto getSingleProduct(@PathVariable Long productId) {
+    public GetSingleProductResponseDto getSingleProduct(@PathVariable Long productId) throws InvalidProductIdException {
         GetSingleProductResponseDto responseDto = new GetSingleProductResponseDto();
-        try {
+        // For testing LocalExceptionHandler and GlobalExceptionHandler
+//        try {
             Product product = productService.getSingleProduct(productId);
             responseDto.setProduct(product);
             responseDto.setStatus(ResponseStatus.SUCCESS);
-        } catch (InvalidProductIdException e) {
-            responseDto.setProduct(null);
-            responseDto.setStatus(ResponseStatus.FAILURE);
-        }
+//        } catch (InvalidProductIdException e) {
+//            responseDto.setProduct(null);
+//            responseDto.setStatus(ResponseStatus.FAILURE);
+//        }
         return responseDto;
     }
 
     // localhost:8080/products
     @GetMapping
     public GetAllProductsResponseDto getAllProducts() {
-        GetAllProductsResponseDto responseDto = new GetAllProductsResponseDto();
-        List<Product> products = productService.getAllProduct();
-        responseDto.setProducts(products);
-        responseDto.setStatus(ResponseStatus.SUCCESS);
-        return responseDto;
+        // For Testing Global Exception Handler
+        throw new RuntimeException();
+//        GetAllProductsResponseDto responseDto = new GetAllProductsResponseDto();
+//        List<Product> products = productService.getAllProduct();
+//        responseDto.setProducts(products);
+//        responseDto.setStatus(ResponseStatus.SUCCESS);
+//        return responseDto;
     }
 
     // localhost:8080/products
@@ -78,12 +83,17 @@ public class ProductController {
     }
 
     @DeleteMapping("/{productId}")
-    public boolean DeleteProduct(@PathVariable Long productId) {
-        try {
+    public boolean DeleteProduct(@PathVariable Long productId) throws InvalidProductIdException {
+//        try {
             productService.deleteProduct(productId);
             return true;
-        } catch (InvalidProductIdException e) {
-            return false;
-        }
+//        } catch (InvalidProductIdException e) {
+//            return false;
+//        }
+    }
+
+    @ExceptionHandler(InvalidProductIdException.class)
+    public ResponseEntity<String> handleProductNotFoundException(InvalidProductIdException invalidProductIdException) {
+        return new ResponseEntity<>("LocalExceptionHandler: " + invalidProductIdException.getProductId() + " is an invalid product id, Please pass a valid product id", HttpStatus.NOT_FOUND);
     }
 }
