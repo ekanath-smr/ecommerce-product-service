@@ -16,6 +16,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static com.example.ProductService.mappers.FakeStoreProductMapper.getFakeStoreProductDto;
+
 @Service
 public class FakeStoreProductService implements ProductService {
 
@@ -70,13 +72,7 @@ public class FakeStoreProductService implements ProductService {
             throw new ProductAlreadyExistException("Product with id " + id + " already exists", id);
         } catch (InvalidProductIdException e) {
             String url = "https://fakestoreapi.com/products";
-            FakeStoreProductDto fakeStoreProductDto = new FakeStoreProductDto();
-            fakeStoreProductDto.setId(id);
-            fakeStoreProductDto.setTitle(title);
-            fakeStoreProductDto.setPrice(price);
-            fakeStoreProductDto.setDescription(description);
-            fakeStoreProductDto.setCategory(categoryName);
-            fakeStoreProductDto.setImage(imageUrl);
+            FakeStoreProductDto fakeStoreProductDto = getFakeStoreProductDto(id, title, price, description, categoryName, imageUrl);
             ResponseEntity<FakeStoreProductDto> responseEntity = restTemplate.postForEntity(url, fakeStoreProductDto, FakeStoreProductDto.class);
             return FakeStoreProductMapper.mapFakeStoreProductDtoToProduct(responseEntity.getBody());
         }
@@ -87,13 +83,7 @@ public class FakeStoreProductService implements ProductService {
 //        try {
             getSingleProduct(id);
             String url = "https://fakestoreapi.com/products/" + id;
-            FakeStoreProductDto fakeStoreProductDto = new FakeStoreProductDto();
-            fakeStoreProductDto.setId(id);
-            fakeStoreProductDto.setTitle(title);
-            fakeStoreProductDto.setPrice(price);
-            fakeStoreProductDto.setDescription(description);
-            fakeStoreProductDto.setCategory(categoryName);
-            fakeStoreProductDto.setImage(imageUrl);
+            FakeStoreProductDto fakeStoreProductDto = getFakeStoreProductDto(id, title, price, description, categoryName, imageUrl);
             restTemplate.put(url, fakeStoreProductDto, FakeStoreProductDto.class);
             return getSingleProduct(id);
 //        } catch (InvalidProductIdException e) {

@@ -1,9 +1,12 @@
 package com.example.ProductService;
 
+import jakarta.persistence.EntityListeners;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 @SpringBootApplication
+@EnableJpaAuditing
 public class ProductServiceApplication {
 
 	public static void main(String[] args) {

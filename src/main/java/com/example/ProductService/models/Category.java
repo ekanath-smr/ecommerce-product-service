@@ -1,10 +1,16 @@
 package com.example.ProductService.models;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import lombok.*;
 
-@Data
-@EqualsAndHashCode(callSuper = true)
+@Getter
+@Setter
+@NoArgsConstructor
+//@AllArgsConstructor
+//@EqualsAndHashCode(callSuper = true)
+@Entity
+@Table(name = "categories")
 public class Category extends BaseModel {
     private String name;
 }
