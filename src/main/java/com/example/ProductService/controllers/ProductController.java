@@ -7,6 +7,7 @@ import com.example.ProductService.exceptions.ProductAlreadyExistException;
 import com.example.ProductService.mappers.FakeStoreProductMapper;
 import com.example.ProductService.models.Product;
 import com.example.ProductService.services.ProductService;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +21,7 @@ public class ProductController {
 
     private final ProductService productService;
 
-    public ProductController(ProductService productService) {
+    public ProductController(@Qualifier("realProductService")  ProductService productService) {
         this.productService = productService;
     }
 
@@ -44,12 +45,12 @@ public class ProductController {
     @GetMapping
     public GetAllProductsResponseDto getAllProducts() {
         // For Testing Global Exception Handler
-        throw new RuntimeException();
-//        GetAllProductsResponseDto responseDto = new GetAllProductsResponseDto();
-//        List<Product> products = productService.getAllProduct();
-//        responseDto.setProducts(products);
-//        responseDto.setStatus(ResponseStatus.SUCCESS);
-//        return responseDto;
+//        throw new RuntimeException();
+        GetAllProductsResponseDto responseDto = new GetAllProductsResponseDto();
+        List<Product> products = productService.getAllProduct();
+        responseDto.setProducts(products);
+        responseDto.setStatus(ResponseStatus.SUCCESS);
+        return responseDto;
     }
 
     // localhost:8080/products

@@ -13,7 +13,7 @@ import lombok.*;
 @Table(name = "products")
 public class Product extends BaseModel {
     private String title;
-    private float price;
+    private Double price;
     private String description;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)

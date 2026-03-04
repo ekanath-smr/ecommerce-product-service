@@ -18,7 +18,7 @@ import java.util.List;
 
 import static com.example.ProductService.mappers.FakeStoreProductMapper.getFakeStoreProductDto;
 
-@Service
+@Service("fakeStoreProductService")
 public class FakeStoreProductService implements ProductService {
 
     private final RestTemplate restTemplate;
@@ -66,7 +66,7 @@ public class FakeStoreProductService implements ProductService {
     }
 
     @Override
-    public Product createProduct(Long id, String title, float price, String description, String categoryName, String imageUrl) throws ProductAlreadyExistException {
+    public Product createProduct(Long id, String title, double price, String description, String categoryName, String imageUrl) throws ProductAlreadyExistException {
         try {
             getSingleProduct(id);
             throw new ProductAlreadyExistException("Product with id " + id + " already exists", id);
@@ -79,7 +79,7 @@ public class FakeStoreProductService implements ProductService {
     }
 
     @Override
-    public Product replaceProduct(Long id, String title, float price, String description, String categoryName, String imageUrl) throws InvalidProductIdException {
+    public Product replaceProduct(Long id, String title, double price, String description, String categoryName, String imageUrl) throws InvalidProductIdException {
 //        try {
             getSingleProduct(id);
             String url = "https://fakestoreapi.com/products/" + id;

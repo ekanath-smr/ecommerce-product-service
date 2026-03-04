@@ -39,7 +39,7 @@ public class FakeStoreProductMapper {
         return fakeStoreProductDto;
     }
 
-    public static FakeStoreProductDto getFakeStoreProductDto(Long id, String title, float price, String description, String categoryName, String imageUrl) {
+    public static FakeStoreProductDto getFakeStoreProductDto(Long id, String title, double price, String description, String categoryName, String imageUrl) {
         FakeStoreProductDto fakeStoreProductDto = new FakeStoreProductDto();
         fakeStoreProductDto.setId(id);
         fakeStoreProductDto.setTitle(title);
