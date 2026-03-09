@@ -1,9 +1,8 @@
 package com.example.ProductService.services;
 
-import com.example.ProductService.dtos.FakeStoreProductDto;
+import com.example.ProductService.dtos.ProductDto;
 import com.example.ProductService.exceptions.InvalidProductIdException;
-import com.example.ProductService.exceptions.ProductAlreadyExistException;
-import com.example.ProductService.mappers.FakeStoreProductMapper;
+import com.example.ProductService.mappers.ProductMapper;
 import com.example.ProductService.models.Product;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
@@ -12,11 +11,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static com.example.ProductService.mappers.FakeStoreProductMapper.getFakeStoreProductDto;
+import static com.example.ProductService.mappers.ProductMapper.*;
 
 @Service("fakeStoreProductService")
 public class FakeStoreProductService implements ProductService {
@@ -28,7 +26,7 @@ public class FakeStoreProductService implements ProductService {
     }
 
     @Override
-    public Product getSingleProduct(Long productId) throws InvalidProductIdException {
+    public Product getProductById(Long productId) throws InvalidProductIdException {
         // make an http call to fakestore api to get the product of the given productId and return the product.
         // https://fakestoreapi.com/products/{productId}
         // one of the way to make http call is to use RestTemplate class provided by Spring framework.
@@ -36,78 +34,71 @@ public class FakeStoreProductService implements ProductService {
         // RestTemplate restTemplate = new RestTemplate();
         String url = "https://fakestoreapi.com/products/" + productId;
         // FakeStoreProductDto fakeStoreProductDto = restTemplate.getForObject(url, FakeStoreProductDto.class);
-        ResponseEntity<FakeStoreProductDto> responseEntity = restTemplate.getForEntity(url, FakeStoreProductDto.class);
-        FakeStoreProductDto fakeStoreProductDto = responseEntity.getBody();
-        if(fakeStoreProductDto == null) {
+        ResponseEntity<ProductDto> responseEntity = restTemplate.getForEntity(url, ProductDto.class);
+        ProductDto productDto = responseEntity.getBody();
+        if(productDto == null) {
             throw new InvalidProductIdException("Invalid product id: " + productId, productId);
         }
-        return FakeStoreProductMapper.mapFakeStoreProductDtoToProduct(fakeStoreProductDto);
+        return ProductMapper.mapProductDtoToProduct(productDto);
     }
 
     @Override
-    public List<Product> getAllProduct() {
+    public List<Product> getAllProducts() {
         String url = "https://fakestoreapi.com/products";
 //        List products = restTemplate.getForEntity(url, List.class).getBody();
 //        return products;
-        ResponseEntity<List<FakeStoreProductDto>> response = restTemplate.exchange(url, HttpMethod.GET, null, new ParameterizedTypeReference<List<FakeStoreProductDto>>() {});
+        ResponseEntity<List<ProductDto>> response = restTemplate.exchange(url, HttpMethod.GET, null, new ParameterizedTypeReference<List<ProductDto>>() {});
 //        // Or Else map the response to an Array of FakeStoreProductDto (since there is no typeErasure in Arrays) and the convert it into a List of FakeStoreProductDto.
-//        ResponseEntity<FakeStoreProductDto[]> response = restTemplate.exchange(url, HttpMethod.GET, null, FakeStoreProductDto[].class);
-//        FakeStoreProductDto[] responseArray = response.getBody();
+//        ResponseEntity<ProductDto[]> response = restTemplate.exchange(url, HttpMethod.GET, null, ProductDto[].class);
+//        ProductDto[] responseArray = response.getBody();
 //        // use this responseList in the place of response.getBody();
-//        List<FakeStoreProductDto> responseList = mapFakeStoreProductDtoArrayToList(responseArray);
+//        List<ProductDto> responseList = mapProductDtoArrayToProductDtoList(responseArray);
         if(response.getBody() == null) {
             return Collections.emptyList();
         }
-        List<Product> products = new ArrayList<>();
-        for(FakeStoreProductDto fakeStoreProductDto : response.getBody()) {
-            products.add(FakeStoreProductMapper.mapFakeStoreProductDtoToProduct(fakeStoreProductDto));
-        }
-        return products;
+        return mapProductDtoListToProductList(response.getBody());
     }
 
     @Override
-    public Product createProduct(Long id, String title, double price, String description, String categoryName, String imageUrl) throws ProductAlreadyExistException {
-        try {
-            getSingleProduct(id);
-            throw new ProductAlreadyExistException("Product with id " + id + " already exists", id);
-        } catch (InvalidProductIdException e) {
-            String url = "https://fakestoreapi.com/products";
-            FakeStoreProductDto fakeStoreProductDto = getFakeStoreProductDto(id, title, price, description, categoryName, imageUrl);
-            ResponseEntity<FakeStoreProductDto> responseEntity = restTemplate.postForEntity(url, fakeStoreProductDto, FakeStoreProductDto.class);
-            return FakeStoreProductMapper.mapFakeStoreProductDtoToProduct(responseEntity.getBody());
-        }
-    }
-
-    @Override
-    public Product replaceProduct(Long id, String title, double price, String description, String categoryName, String imageUrl) throws InvalidProductIdException {
+    public Product createProduct(String title, double price, String description, String categoryName, String imageUrl) {
 //        try {
-            getSingleProduct(id);
-            String url = "https://fakestoreapi.com/products/" + id;
-            FakeStoreProductDto fakeStoreProductDto = getFakeStoreProductDto(id, title, price, description, categoryName, imageUrl);
-            restTemplate.put(url, fakeStoreProductDto, FakeStoreProductDto.class);
-            return getSingleProduct(id);
+//            getProductById(id);
+//            throw new ProductAlreadyExistException("Product with id " + id + " already exists", id);
 //        } catch (InvalidProductIdException e) {
-//            throw new InvalidProductIdException("Product with id " + id + " does not exist", e.getProductId());
+            String url = "https://fakestoreapi.com/products";
+            ProductDto productDto = getProductDto(0L, title, price, description, categoryName, imageUrl);
+            ResponseEntity<ProductDto> responseEntity = restTemplate.postForEntity(url, productDto, ProductDto.class);
+            return ProductMapper.mapProductDtoToProduct(responseEntity.getBody());
 //        }
     }
 
     @Override
-    public void deleteProduct(Long productId) throws InvalidProductIdException {
-//        try {
-            getSingleProduct(productId);
+    public Product updateProduct(Long productId, String title, double price, String description, String categoryName, String imageUrl) throws InvalidProductIdException {
+        try {
+            getProductById(productId);
+            String url = "https://fakestoreapi.com/products/" + productId;
+            ProductDto productDto = getProductDto(productId, title, price, description, categoryName, imageUrl);
+            restTemplate.put(url, productDto, ProductDto.class);
+            return getProductById(productId);
+        } catch (InvalidProductIdException e) {
+            throw new InvalidProductIdException("Product with productId " + productId + " does not exist", e.getProductId());
+        }
+    }
+
+    @Override
+    public void deleteProductById(Long productId) throws InvalidProductIdException {
+        try {
+            getProductById(productId);
             String url = "https://fakestoreapi.com/products/" + productId;
             restTemplate.delete(url);
-//        } catch (InvalidProductIdException e) {
-//            throw new InvalidProductIdException("Product with id " + productId + " does not exist", e.getProductId());
-//        }
+        } catch (InvalidProductIdException e) {
+            throw new InvalidProductIdException("Product with id " + productId + " does not exist", e.getProductId());
+        }
     }
 
-    public List<FakeStoreProductDto> mapFakeStoreProductDtoArrayToList(FakeStoreProductDto[] fakeStoreProductDtos) {
-        List<FakeStoreProductDto> fakeStoreProductDtoList = new ArrayList<>();
-        for(FakeStoreProductDto fakeStoreProductDto : fakeStoreProductDtos) {
-            fakeStoreProductDtoList.add(fakeStoreProductDto);
-        }
-        return fakeStoreProductDtoList;
+    @Override
+    public List<Product> searchProducts(String keyword) {
+        return List.of();
     }
 
 }

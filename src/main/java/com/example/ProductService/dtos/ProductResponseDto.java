@@ -3,7 +3,7 @@ package com.example.ProductService.dtos;
 import lombok.Data;
 
 @Data
-public class ReplaceProductResponseDto {
-    private FakeStoreProductDto product;
+public class ProductResponseDto {
+    private ProductDto product;
     private ResponseStatus status;
 }

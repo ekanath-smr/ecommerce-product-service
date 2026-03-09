@@ -11,5 +11,7 @@ import lombok.*;
 @Entity
 @Table(name = "categories")
 public class Category extends BaseModel {
+    @Column(unique = true, nullable = false)
     private String name;
+    private String description;
 }
