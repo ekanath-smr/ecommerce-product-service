@@ -1,16 +1,18 @@
 package com.example.ProductService.services;
 
 import com.example.ProductService.dtos.ProductDto;
+import com.example.ProductService.exceptions.InvalidCategoryNameException;
 import com.example.ProductService.exceptions.InvalidProductIdException;
+import com.example.ProductService.exceptions.ProductAlreadyExistException;
 import com.example.ProductService.mappers.ProductMapper;
 import com.example.ProductService.models.Product;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -43,24 +45,34 @@ public class FakeStoreProductService implements ProductService {
     }
 
     @Override
-    public List<Product> getAllProducts() {
-        String url = "https://fakestoreapi.com/products";
-//        List products = restTemplate.getForEntity(url, List.class).getBody();
-//        return products;
-        ResponseEntity<List<ProductDto>> response = restTemplate.exchange(url, HttpMethod.GET, null, new ParameterizedTypeReference<List<ProductDto>>() {});
-//        // Or Else map the response to an Array of FakeStoreProductDto (since there is no typeErasure in Arrays) and the convert it into a List of FakeStoreProductDto.
-//        ResponseEntity<ProductDto[]> response = restTemplate.exchange(url, HttpMethod.GET, null, ProductDto[].class);
-//        ProductDto[] responseArray = response.getBody();
-//        // use this responseList in the place of response.getBody();
-//        List<ProductDto> responseList = mapProductDtoArrayToProductDtoList(responseArray);
-        if(response.getBody() == null) {
-            return Collections.emptyList();
-        }
-        return mapProductDtoListToProductList(response.getBody());
+    public Page<Product> getAllProducts(int page, int size, String sortBy, String sortDirection) {
+        return null;
     }
 
     @Override
-    public Product createProduct(String title, double price, String description, String categoryName, String imageUrl) {
+    public Page<Product> searchProducts(String keyword, String categoryName, Double minPrice, Double maxPrice, int page, int size, String sortBy, String sortDirection) {
+        return null;
+    }
+
+//    @Override
+//    public List<Product> getAllProducts() {
+//        String url = "https://fakestoreapi.com/products";
+////        List products = restTemplate.getForEntity(url, List.class).getBody();
+////        return products;
+//        ResponseEntity<List<ProductDto>> response = restTemplate.exchange(url, HttpMethod.GET, null, new ParameterizedTypeReference<List<ProductDto>>() {});
+////        // Or Else map the response to an Array of FakeStoreProductDto (since there is no typeErasure in Arrays) and the convert it into a List of FakeStoreProductDto.
+////        ResponseEntity<ProductDto[]> response = restTemplate.exchange(url, HttpMethod.GET, null, ProductDto[].class);
+////        ProductDto[] responseArray = response.getBody();
+////        // use this responseList in the place of response.getBody();
+////        List<ProductDto> responseList = mapProductDtoArrayToProductDtoList(responseArray);
+//        if(response.getBody() == null) {
+//            return Collections.emptyList();
+//        }
+//        return mapProductDtoListToProductList(response.getBody());
+//    }
+
+    @Override
+    public Product createProduct(String title, double price, String description, String categoryName, String imageUrl) throws ProductAlreadyExistException, InvalidCategoryNameException {
 //        try {
 //            getProductById(id);
 //            throw new ProductAlreadyExistException("Product with id " + id + " already exists", id);
@@ -96,9 +108,9 @@ public class FakeStoreProductService implements ProductService {
         }
     }
 
-    @Override
-    public List<Product> searchProducts(String keyword) {
-        return List.of();
-    }
+//    @Override
+//    public List<Product> searchProducts(String keyword) {
+//        return List.of();
+//    }
 
 }

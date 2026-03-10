@@ -5,6 +5,7 @@ import com.example.ProductService.models.Product;
 import com.example.ProductService.projections.ProductWithTitleAndPrice;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -27,17 +28,17 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findAll();
 
     // Derived Queries // select * from products where title = ?
-    List<Product> findByTitle(String title);
+    Optional<Product> findByTitle(String title);
 
     // Derived Queries //select * from products where title LIKE '%iPhone%'
-    Page<Product> findByTitleContainsIgnoreCase(String str, Pageable pageable);
+//    Page<Product> findByTitleContainsIgnoreCase(String keyword, Pageable pageable);
 
     // Derived Queries // select * from products where price >= start and price <= end
-    List<Product> findByPriceBetween(Double start, Double end);
+//    List<Product> findByPriceBetween(Double minPrice, Double maxPrice);
 
     // Derived Queries
     //select * from products where title LIKE '%str%' and price >= start and price <= end
-    List<Product> findByTitleContainsIgnoreCaseAndPriceBetween(String title, Double start, Double end);
+//    List<Product> findByTitleContainsIgnoreCaseAndPriceBetween(String keyword, Double minPrice, Double maxPrice);
 
     // Derived Queries
     List<Product> findByCreatedAtBetween(Date start, Date end);
@@ -66,9 +67,20 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     ProductWithTitleAndPrice findTitleAndPriceById(@Param("id") Long id);
 
     // Derived Queries
-    Optional<Product> findByCategory(Category category);
+//    Optional<Product> findByCategory(Category category);
 
     // Derived Queries
-    Optional<Product> findByCategory_Name(String categoryName);
+//    Optional<Product> findByCategory_Name(String categoryName);
+
+    @Query("""
+            select p
+            from Product p
+            where ((:keyword is null or lower(p.title) like lower(concat('%', :keyword, '%')))
+            and (:categoryName is null or p.category.name = :categoryName)
+            and (:minPrice is null or p.price >= :minPrice)
+            and (:maxPrice is null or p.price <= :maxPrice))
+            """)
+    Page<Product> search(@Param("keyword") String keyword, @Param("categoryName") String categoryName,
+                         @Param("minPrice") Double minPrice, @Param("maxPrice") Double maxPrice, Pageable pageable);
 
 }

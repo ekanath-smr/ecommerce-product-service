@@ -93,7 +93,7 @@ public class CategoryServiceImpl implements CategoryService {
         Optional<Category> categoryOptional = categoryRepository.findById(categoryId);
         if(categoryOptional.isEmpty()) {
             logger.warn("Category not found with id: {}", categoryId);
-            throw new InvalidCategoryIdException("Invalid category id.");
+            throw new InvalidCategoryIdException("Invalid category id.", categoryId);
         }
         return categoryOptional.get();
     }
@@ -105,7 +105,7 @@ public class CategoryServiceImpl implements CategoryService {
         Optional<Category> categoryOptional = categoryRepository.findByName(name);
         if(categoryOptional.isEmpty()) {
             logger.debug("Category not found with name: {}", name);
-            throw new InvalidCategoryNameException("Invalid category name.");
+            throw new InvalidCategoryNameException("Invalid category name.", name);
         }
         return categoryOptional.get();
     }

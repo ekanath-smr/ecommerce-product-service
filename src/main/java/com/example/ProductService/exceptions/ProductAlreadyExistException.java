@@ -6,11 +6,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ProductAlreadyExistException extends Exception {
-    private Long productId;
-    private String message;
-    public ProductAlreadyExistException(String message, Long productId) {
+    private String title;
+    public ProductAlreadyExistException(String message, String title) {
         super(message);
-        this.productId = productId;
-        this.message = message;
+        this.title = title;
     }
 }

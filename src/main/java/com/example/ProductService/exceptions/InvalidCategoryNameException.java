@@ -1,7 +1,12 @@
 package com.example.ProductService.exceptions;
 
+import lombok.Getter;
+
+@Getter
 public class InvalidCategoryNameException extends Exception {
-    public InvalidCategoryNameException(String message) {
+    private final String categoryName;
+    public InvalidCategoryNameException(String message, String categoryName) {
         super(message);
+        this.categoryName = categoryName;
     }
 }
