@@ -1,50 +1,80 @@
 # Product Service
 
-A Spring Boot microservice that manages **Products** and **Categories** for an e-commerce system.  
-This service provides REST APIs to create, update, delete, search, and retrieve products and categories.
+A **Spring Boot microservice** responsible for managing **Products** and **Categories** in an e-commerce system.
+
+This service exposes REST APIs to:
+
+* Create products and categories
+* Update product/category details
+* Delete products and categories
+* Retrieve products with pagination and sorting
+* Search products using filters
+
+This service is designed as part of a **scalable microservices-based e-commerce backend**.
 
 ---
 
-## Features
+# Features
 
-- Product CRUD operations
-- Category CRUD operations
-- Product search with filters
-- Pagination and sorting
-- Global exception handling
-- Logging using SLF4J
-- DTO mapping
-- Unit testing with JUnit and Mockito
-
----
-
-## Tech Stack
-
-- Java 17+
-- Spring Boot
-- Spring Web
-- Spring Data JPA
-- Hibernate
-- MySQL / H2
-- Lombok
-- Maven
-- JUnit
-- Mockito
+* Product CRUD operations
+* Category CRUD operations
+* Product search with filters
+* Pagination and sorting
+* Global exception handling
+* Logging using SLF4J
+* DTO-based API layer
+* Unit testing with JUnit and Mockito
+* API documentation using Swagger / OpenAPI
 
 ---
 
-## Project Structure
+# Tech Stack
 
-src  
-├── controller  
-├── services  
-├── repositories  
-├── models  
-├── dtos  
-├── mappers  
-├── exceptions  
-├── controllerAdvices  
-└── tests  
+* Java 21
+* Spring Boot
+* Spring Web
+* Spring Data JPA
+* Hibernate
+* MySQL / H2
+* Lombok
+* Maven
+* Swagger (OpenAPI)
+* JUnit
+* Mockito
+
+---
+
+# Project Structure
+
+```
+src/main/java/com/example/productservice
+
+├── controller
+├── services
+├── repositories
+├── models
+├── dtos
+├── mappers
+├── exceptions
+├── controllerAdvices
+└── config
+
+src/test/java
+
+└── services
+```
+
+---
+
+# API Documentation
+
+Swagger UI is available at:
+
+```
+http://localhost:8080/swagger-ui/index.html
+```
+
+This provides an interactive interface to test all APIs.
 
 ---
 
@@ -72,7 +102,9 @@ Request Body
 
 ### Get Product By Id
 
+```
 GET /products/{id}
+```
 
 Example
 
@@ -110,7 +142,7 @@ GET /products?page=0&size=10&sortBy=id&sortDirection=asc
 
 ### Search Products
 
-Search products using multiple filters.
+Search products using filters.
 
 ```
 GET /products/search
@@ -206,15 +238,15 @@ Example error response:
 
 Unit tests are implemented for the service layer using:
 
-- JUnit
-- Mockito
+* JUnit
+* Mockito
 
 Test classes:
 
-- CategoryServiceImplTest
-- ProductServiceImplTest
+* `CategoryServiceImplTest`
+* `ProductServiceImplTest`
 
-Run tests:
+Run tests using:
 
 ```
 mvn test
@@ -228,9 +260,10 @@ Logging is implemented using **SLF4J**.
 
 Log levels used:
 
-- INFO → create/update operations
-- DEBUG → fetch/search operations
-- WARN → invalid input or missing resources
+* INFO → create/update operations
+* DEBUG → fetch/search operations
+* WARN → invalid input or missing resources
+* ERROR → unexpected system failures
 
 ---
 
@@ -242,36 +275,57 @@ Clone the repository
 git clone <repo-url>
 ```
 
-Navigate to project
+Navigate to the project
 
 ```
 cd product-service
 ```
 
-Run application
+Build the project
+
+```
+mvn clean install
+```
+
+Run the application
 
 ```
 mvn spring-boot:run
 ```
 
-Application starts at
+Application will start at:
 
 ```
 http://localhost:8080
+```
+
+Swagger UI:
+
+```
+http://localhost:8080/swagger-ui/index.html
 ```
 
 ---
 
 # Future Improvements
 
-- API documentation using Swagger
-- Integration tests
-- Docker containerization
-- API Gateway integration
-- Service discovery
+* Integration testing
+* Docker containerization
+* API Gateway integration
+* Service discovery (Eureka)
+* Distributed tracing
+* Authentication and authorization using JWT
 
 ---
 
 # Author
 
-Backend service developed using Spring Boot demonstrating REST API design, pagination, filtering, exception handling, logging, and unit testing.
+Backend microservice built using **Spring Boot** demonstrating:
+
+* REST API design
+* Pagination and filtering
+* DTO mapping
+* Global exception handling
+* Logging
+* Unit testing
+* API documentation
