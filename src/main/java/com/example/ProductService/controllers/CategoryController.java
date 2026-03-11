@@ -10,6 +10,9 @@ import com.example.ProductService.exceptions.InvalidCategoryNameException;
 import com.example.ProductService.mappers.CategoryMapper;
 import com.example.ProductService.models.Category;
 import com.example.ProductService.services.CategoryService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +36,11 @@ public class CategoryController {
     }
 
     // Create Category
+    @Operation(summary = "Create a new category", description = "Creates a new category with a name and description.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Category created successfully"),
+            @ApiResponse(responseCode = "400", description = "Category already exists or invalid input")
+    })
     @PostMapping
     public CategoryDto createCategory(@Valid @RequestBody CategoryRequestDto requestDto) throws CategoryAlreadyExistsException {
         logger.info("Received request to create category with name: {}", requestDto.getName());
@@ -41,81 +49,83 @@ public class CategoryController {
         return mapCategoryToCategoryDto(category);
     }
 
-//    // Get All Categories
-//    @GetMapping
-//    public List<CategoryDto> getAllCategories() {
-//        List<Category> categories = categoryService.getAllCategories();
-//        return mapCategoryListToCategoryDtoList(categories);
-//    }
-
-    // Get All Categories
+    // Get All Categories with Pagination
+    @Operation(summary = "Get all categories with pagination", description = "Returns a paginated list of categories with sorting options.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Categories fetched successfully")
+    })
     @GetMapping
-    public Page<CategoryDto> getAllCategories(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size,
-                                              @RequestParam(defaultValue = "id") String sortBy, @RequestParam(defaultValue = "asc") String sortDirection) {
+    public Page<CategoryDto> getAllCategories(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDirection) {
         logger.debug("Fetching categories page={}, size={}, sortBy={}, direction={}", page, size, sortBy, sortDirection);
         return categoryService.getAllCategories(page, size, sortBy, sortDirection).map(CategoryMapper::mapCategoryToCategoryDto);
     }
 
     // Get Category by ID
+    @Operation(summary = "Get category by ID", description = "Fetches a category by its unique ID.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Category fetched successfully"),
+            @ApiResponse(responseCode = "404", description = "Invalid category ID")
+    })
     @GetMapping("/{id}")
     public CategoryResponseDto getCategoryById(@PathVariable Long id) throws InvalidCategoryIdException {
         logger.debug("Fetching category with id: {}", id);
         CategoryResponseDto responseDto = new CategoryResponseDto();
-//        try {
-            Category category = categoryService.getCategoryById(id);
-            responseDto.setCategory(mapCategoryToCategoryDto(category));
-            responseDto.setStatus(ResponseStatus.SUCCESS);
-//        } catch (InvalidCategoryIdException e) {
-//            responseDto.setCategory(null);
-//            responseDto.setStatus(ResponseStatus.FAILURE);
-//        }
+        Category category = categoryService.getCategoryById(id);
+        responseDto.setCategory(mapCategoryToCategoryDto(category));
+        responseDto.setStatus(ResponseStatus.SUCCESS);
         logger.debug("Category fetched successfully for id: {}", id);
         return responseDto;
     }
 
+    // Get Category by Name
+    @Operation(summary = "Get category by name", description = "Fetches a category by its unique name.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Category fetched successfully"),
+            @ApiResponse(responseCode = "404", description = "Invalid category name")
+    })
     @GetMapping(params = "name")
     public CategoryResponseDto getCategoryByName(@RequestParam("name") String name) throws InvalidCategoryNameException {
         logger.debug("Fetching category with name: {}", name);
         CategoryResponseDto responseDto = new CategoryResponseDto();
-//        try {
-            Category category = categoryService.getCategoryByName(name);
-            responseDto.setCategory(mapCategoryToCategoryDto(category));
-            responseDto.setStatus(ResponseStatus.SUCCESS);
-//        } catch (InvalidCategoryNameException e) {
-//            responseDto.setCategory(null);
-//            responseDto.setStatus(ResponseStatus.FAILURE);
-//        }
+        Category category = categoryService.getCategoryByName(name);
+        responseDto.setCategory(mapCategoryToCategoryDto(category));
+        responseDto.setStatus(ResponseStatus.SUCCESS);
         logger.debug("Category fetched successfully for name: {}", name);
         return responseDto;
     }
 
     // Update Category
+    @Operation(summary = "Update category", description = "Updates category details (name and description) by ID.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Category updated successfully"),
+            @ApiResponse(responseCode = "404", description = "Invalid category ID")
+    })
     @PatchMapping("/{id}")
     public CategoryResponseDto updateCategory(@PathVariable Long id, @Valid @RequestBody CategoryRequestDto requestDto) throws InvalidCategoryIdException {
         logger.info("Updating category with id: {}", id);
         CategoryResponseDto responseDto = new CategoryResponseDto();
-//        try {
-            Category updatedCategory = categoryService.updateCategory(id, requestDto.getName(), requestDto.getDescription());
-            responseDto.setCategory(mapCategoryToCategoryDto(updatedCategory));
-            responseDto.setStatus(ResponseStatus.SUCCESS);
-//        } catch (InvalidCategoryIdException e) {
-//            responseDto.setCategory(null);
-//            responseDto.setStatus(ResponseStatus.FAILURE);
-//        }
+        Category updatedCategory = categoryService.updateCategory(id, requestDto.getName(), requestDto.getDescription());
+        responseDto.setCategory(mapCategoryToCategoryDto(updatedCategory));
+        responseDto.setStatus(ResponseStatus.SUCCESS);
         logger.info("Category updated successfully with id: {}", id);
         return responseDto;
     }
 
     // Delete Category
+    @Operation(summary = "Delete category", description = "Deletes a category by its unique ID.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Category deleted successfully"),
+            @ApiResponse(responseCode = "404", description = "Invalid category ID")
+    })
     @DeleteMapping("/{id}")
     public boolean deleteCategoryById(@PathVariable Long id) throws InvalidCategoryIdException {
         logger.warn("Deleting category with id: {}", id);
-//        try {
-            categoryService.deleteCategoryById(id);
-            logger.warn("Category deleted successfully with id: {}", id);
-            return true;
-//        } catch (InvalidCategoryIdException e) {
-//            return false;
-//        }
+        categoryService.deleteCategoryById(id);
+        logger.warn("Category deleted successfully with id: {}", id);
+        return true;
     }
 }
