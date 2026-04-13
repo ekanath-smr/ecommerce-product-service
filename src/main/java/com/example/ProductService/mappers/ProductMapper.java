@@ -1,10 +1,13 @@
 package com.example.ProductService.mappers;
 
 import com.example.ProductService.dtos.ProductDto;
+import com.example.ProductService.dtos.ProductRequestDto;
 import com.example.ProductService.models.Category;
 import com.example.ProductService.models.Product;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class ProductMapper {
@@ -43,22 +46,24 @@ public class ProductMapper {
     }
 
     public static List<ProductDto> mapProductListToProductDtoList(List<Product> products) {
-        List<ProductDto> productDtos = new ArrayList<>();
-        for(Product product : products) {
-            productDtos.add(mapProductToProductDto(product));
-        }
-        return productDtos;
+        return products.stream().map(ProductMapper::mapProductToProductDto).toList();
+//        List<ProductDto> productDtos = new ArrayList<>();
+//        for(Product product : products) {
+//            productDtos.add(mapProductToProductDto(product));
+//        }
+//        return productDtos;
     }
 
     public static List<Product> mapProductDtoListToProductList(List<ProductDto> productDtos) {
-        List<Product> products = new ArrayList<>();
-        for(ProductDto productDto : productDtos) {
-            products.add(mapProductDtoToProduct(productDto));
-        }
-        return products;
+        return productDtos.stream().map(ProductMapper::mapProductDtoToProduct).toList();
+//        List<Product> products = new ArrayList<>();
+//        for(ProductDto productDto : productDtos) {
+//            products.add(mapProductDtoToProduct(productDto));
+//        }
+//        return products;
     }
 
-    public static ProductDto getProductDto(Long id, String title, double price, String description, String categoryName, String imageUrl) {
+    public static ProductDto getProductDtoFrom(Long id, String title, BigDecimal price, String description, String categoryName, String imageUrl) {
         ProductDto productDto = new ProductDto();
         productDto.setId(id);
         productDto.setTitle(title);
@@ -70,10 +75,22 @@ public class ProductMapper {
     }
 
     public static List<ProductDto> mapProductDtoArrayToProductDtoList(ProductDto[] productDtos) {
-        List<ProductDto> productDtoList = new ArrayList<>();
-        for(ProductDto productDto : productDtos) {
-            productDtoList.add(productDto);
-        }
-        return productDtoList;
+        return new ArrayList<>(Arrays.asList(productDtos));
+//        List<ProductDto> productDtoList = new ArrayList<>(Arrays.asList(productDtos));
+//        List<ProductDto> productDtoList = new ArrayList<>();
+//        productDtoList.addAll(Arrays.asList(productDtos));
+//        for(ProductDto productDto : productDtos) {
+//            productDtoList.add(productDto);
+//        }
+    }
+
+    public static ProductRequestDto getProductRequestDtoFrom(String title, BigDecimal price, String description, String categoryName, String imageUrl) {
+        ProductRequestDto productRequestDto = new ProductRequestDto();
+        productRequestDto.setTitle(title);
+        productRequestDto.setPrice(price);
+        productRequestDto.setDescription(description);
+        productRequestDto.setCategory(categoryName);
+        productRequestDto.setImage(imageUrl);
+        return productRequestDto;
     }
 }

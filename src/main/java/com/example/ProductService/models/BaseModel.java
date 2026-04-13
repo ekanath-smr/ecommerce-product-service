@@ -1,18 +1,19 @@
 package com.example.ProductService.models;
 
 import jakarta.persistence.*;
-import lombok.Data;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Getter
 @Setter
-//@Inheritance(strategy = InheritanceType.JOINED)
+@NoArgsConstructor
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
 public abstract class BaseModel {
@@ -21,7 +22,7 @@ public abstract class BaseModel {
     private Long id;
     @CreatedDate
     @Column(nullable = false, updatable = false)
-    private Date createdAt;
+    private LocalDateTime createdAt;
     @LastModifiedDate
-    private Date updatedAt;
+    private LocalDateTime updatedAt;
 }

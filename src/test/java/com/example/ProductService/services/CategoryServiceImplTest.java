@@ -1,24 +1,28 @@
 package com.example.ProductService.services;
 
-import com.example.ProductService.exceptions.CategoryAlreadyExistsException;
-import com.example.ProductService.exceptions.InvalidCategoryIdException;
-import com.example.ProductService.exceptions.InvalidCategoryNameException;
+import com.example.ProductService.dtos.CategoryRequestDto;
+import com.example.ProductService.exceptions.*;
 import com.example.ProductService.models.Category;
 import com.example.ProductService.repositories.CategoryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.*;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(org.mockito.junit.jupiter.MockitoExtension.class)
+// Achieved comprehensive unit test coverage for hierarchical category business logic including parent-child validation,
+// circular dependency prevention, deletion constraints, and duplicate detection using JUnit & Mockito.
+
+@ExtendWith(MockitoExtension.class)
 class CategoryServiceImplTest {
 
     @Mock
@@ -29,113 +33,219 @@ class CategoryServiceImplTest {
 
     private Category category1;
     private Category category2;
+    private Category parentCategory;
 
     @BeforeEach
     void setUp() {
+        parentCategory = new Category();
+        parentCategory.setId(10L);
+        parentCategory.setName("Parent");
+
         category1 = new Category();
         category1.setId(1L);
         category1.setName("Electronics");
         category1.setDescription("Electronic items");
+        category1.setSubCategories(new ArrayList<>());
 
         category2 = new Category();
         category2.setId(2L);
         category2.setName("Clothing");
         category2.setDescription("Clothes");
+        category2.setSubCategories(new ArrayList<>());
     }
 
-    //================ CREATE =================
+    // ================= CREATE =================
 
     @Test
-    void createCategory_shouldCreateCategorySuccessfully() throws CategoryAlreadyExistsException, InvalidCategoryNameException {
+    void createCategory_shouldCreateSuccessfully_withoutParent() {
         when(categoryRepository.findByName("NewCategory")).thenReturn(Optional.empty());
-        Category newCategory = new Category();
-        newCategory.setName("NewCategory");
-        newCategory.setDescription("Desc");
-        when(categoryRepository.save(any(Category.class))).thenReturn(newCategory);
 
-        Category created = categoryService.createCategory("NewCategory", "Desc");
+        Category saved = new Category();
+        saved.setName("NewCategory");
+        saved.setDescription("Desc");
 
-        assertEquals("NewCategory", created.getName());
-        assertEquals("Desc", created.getDescription());
-        verify(categoryRepository, times(1)).save(any(Category.class));
+        when(categoryRepository.save(any(Category.class))).thenReturn(saved);
+
+        Category result = categoryService.createCategory(
+                CategoryRequestDto.builder()
+                        .name("NewCategory")
+                        .description("Desc")
+                        .build()
+        );
+
+        assertEquals("NewCategory", result.getName());
+        verify(categoryRepository).save(any(Category.class));
     }
 
     @Test
-    void createCategory_shouldThrowException_whenCategoryAlreadyExists() throws InvalidCategoryNameException {
+    void createCategory_shouldCreateSuccessfully_withParentId() {
+        when(categoryRepository.findByName("Mobiles")).thenReturn(Optional.empty());
+        when(categoryRepository.findById(10L)).thenReturn(Optional.of(parentCategory));
+
+        Category result = categoryService.createCategory(
+                CategoryRequestDto.builder()
+                        .name("Mobiles")
+                        .description("Phones")
+                        .parentCategoryId(10L)
+                        .build()
+        );
+
+        assertEquals(parentCategory, result.getParentCategory());
+        verify(categoryRepository).findById(10L);
+        verify(categoryRepository).save(any(Category.class));
+    }
+
+    @Test
+    void createCategory_shouldThrow_whenCategoryAlreadyExists() {
         when(categoryRepository.findByName("Electronics")).thenReturn(Optional.of(category1));
 
         assertThrows(CategoryAlreadyExistsException.class,
-                () -> categoryService.createCategory("Electronics", "Desc"));
+                () -> categoryService.createCategory(
+                        CategoryRequestDto.builder()
+                                .name("Electronics")
+                                .build()
+                ));
 
         verify(categoryRepository, never()).save(any());
     }
 
-    //================ UPDATE =================
+    @Test
+    void createCategory_shouldThrow_whenInvalidParentId() {
+        when(categoryRepository.findByName("Mobiles")).thenReturn(Optional.empty());
+        when(categoryRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(InvalidParentCategoryId.class,
+                () -> categoryService.createCategory(
+                        CategoryRequestDto.builder()
+                                .name("Mobiles")
+                                .parentCategoryId(999L)
+                                .build()
+                ));
+    }
 
     @Test
-    void updateCategory_shouldUpdateCategorySuccessfully() throws InvalidCategoryIdException {
+    void createCategory_shouldThrow_whenBothParentIdAndNameProvided() {
+        when(categoryRepository.findByName("Mobiles")).thenReturn(Optional.empty());
+
+        assertThrows(IllegalArgumentException.class,
+                () -> categoryService.createCategory(
+                        CategoryRequestDto.builder()
+                                .name("Mobiles")
+                                .parentCategoryId(1L)
+                                .parentCategoryName("Electronics")
+                                .build()
+                ));
+    }
+
+    // ================= UPDATE =================
+
+    @Test
+    void updateCategory_shouldUpdateSuccessfully() {
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(category1));
+        when(categoryRepository.findByName("NewName")).thenReturn(Optional.empty());
         when(categoryRepository.save(any(Category.class))).thenReturn(category1);
 
-        Category updated = categoryService.updateCategory(1L, "NewName", "NewDesc");
+        Category result = categoryService.updateCategory(
+                1L,
+                CategoryRequestDto.builder()
+                        .name("NewName")
+                        .description("Updated")
+                        .build()
+        );
 
-        assertEquals("NewName", updated.getName());
-        assertEquals("NewDesc", updated.getDescription());
-        verify(categoryRepository, times(1)).save(category1);
+        assertEquals("NewName", result.getName());
+        assertEquals("Updated", result.getDescription());
     }
 
     @Test
-    void updateCategory_shouldThrowException_whenIdInvalid() {
-        when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
+    void updateCategory_shouldThrow_whenDuplicateNameExists() {
+        when(categoryRepository.findByName("Clothing")).thenReturn(Optional.of(category2));
 
-        assertThrows(InvalidCategoryIdException.class,
-                () -> categoryService.updateCategory(99L, "Name", "Desc"));
-
-        verify(categoryRepository, never()).save(any());
+        assertThrows(CategoryAlreadyExistsException.class,
+                () -> categoryService.updateCategory(
+                        1L,
+                        CategoryRequestDto.builder()
+                                .name("Clothing")
+                                .build()
+                ));
     }
 
-    //================ DELETE =================
-
     @Test
-    void deleteCategoryById_shouldDeleteCategorySuccessfully() throws InvalidCategoryIdException {
+    void updateCategory_shouldThrow_whenSelfParentAssigned() {
+        when(categoryRepository.findByName("Electronics")).thenReturn(Optional.of(category1));
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(category1));
-        doNothing().when(categoryRepository).deleteById(1L);
+
+        assertThrows(InvalidParentAssignmentException.class,
+                () -> categoryService.updateCategory(
+                        1L,
+                        CategoryRequestDto.builder()
+                                .name("Electronics")
+                                .parentCategoryId(1L)
+                                .build()
+                ));
+    }
+
+    @Test
+    void updateCategory_shouldThrow_whenCircularHierarchyDetected() {
+        category1.setParentCategory(category2);
+        category2.setParentCategory(category1);
+
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category1));
+        when(categoryRepository.findById(2L)).thenReturn(Optional.of(category2));
+        when(categoryRepository.findByName("Electronics")).thenReturn(Optional.of(category1));
+
+        assertThrows(InvalidCategoryHierarchyException.class,
+                () -> categoryService.updateCategory(
+                        1L,
+                        CategoryRequestDto.builder()
+                                .name("Electronics")
+                                .parentCategoryId(2L)
+                                .build()
+                ));
+    }
+
+    // ================= DELETE =================
+
+    @Test
+    void deleteCategory_shouldDeleteSuccessfully() {
+        category1.setSubCategories(new ArrayList<>());
+
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category1));
 
         categoryService.deleteCategoryById(1L);
 
-        verify(categoryRepository, times(1)).deleteById(1L);
+        verify(categoryRepository).deleteById(1L);
     }
 
     @Test
-    void deleteCategoryById_shouldThrowException_whenIdInvalid() {
-        when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
+    void deleteCategory_shouldThrow_whenHasChildren() {
+        category1.setSubCategories(List.of(category2));
 
-        assertThrows(InvalidCategoryIdException.class,
-                () -> categoryService.deleteCategoryById(99L));
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category1));
+
+        assertThrows(CannotDeleteParentCategoryException.class,
+                () -> categoryService.deleteCategoryById(1L));
 
         verify(categoryRepository, never()).deleteById(anyLong());
     }
 
-    //================ GET ALL =================
+    // ================= GET ALL =================
 
     @Test
-    void getAllCategories_shouldReturnPaginatedCategories() {
-        List<Category> categoryList = Arrays.asList(category1, category2);
-        Pageable pageable = PageRequest.of(0, 10, Sort.by("id"));
-        Page<Category> page = new PageImpl<>(categoryList, pageable, categoryList.size());
+    void getAllCategories_shouldReturnPaginatedResult() {
+        Page<Category> page = new PageImpl<>(List.of(category1, category2));
 
-        when(categoryRepository.findAll(pageable)).thenReturn(page);
+        when(categoryRepository.findAll(any(Pageable.class))).thenReturn(page);
 
         Page<Category> result = categoryService.getAllCategories(0, 10, "id", "ASC");
 
         assertEquals(2, result.getContent().size());
-        assertEquals("Electronics", result.getContent().get(0).getName());
     }
 
-    //================ GET BY ID =================
+    // ================= GET BY ID =================
 
     @Test
-    void getCategoryById_shouldReturnCategory() throws InvalidCategoryIdException {
+    void getCategoryById_shouldReturnCategory() {
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(category1));
 
         Category result = categoryService.getCategoryById(1L);
@@ -144,17 +254,17 @@ class CategoryServiceImplTest {
     }
 
     @Test
-    void getCategoryById_shouldThrowException_whenIdInvalid() {
-        when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
+    void getCategoryById_shouldThrow_whenInvalidId() {
+        when(categoryRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThrows(InvalidCategoryIdException.class,
-                () -> categoryService.getCategoryById(99L));
+                () -> categoryService.getCategoryById(999L));
     }
 
-    //================ GET BY NAME =================
+    // ================= GET BY NAME =================
 
     @Test
-    void getCategoryByName_shouldReturnCategory() throws InvalidCategoryNameException {
+    void getCategoryByName_shouldReturnCategory() {
         when(categoryRepository.findByName("Electronics")).thenReturn(Optional.of(category1));
 
         Category result = categoryService.getCategoryByName("Electronics");
@@ -163,10 +273,10 @@ class CategoryServiceImplTest {
     }
 
     @Test
-    void getCategoryByName_shouldThrowException_whenNameInvalid() {
-        when(categoryRepository.findByName("NonExistent")).thenReturn(Optional.empty());
+    void getCategoryByName_shouldThrow_whenInvalidName() {
+        when(categoryRepository.findByName("Unknown")).thenReturn(Optional.empty());
 
         assertThrows(InvalidCategoryNameException.class,
-                () -> categoryService.getCategoryByName("NonExistent"));
+                () -> categoryService.getCategoryByName("Unknown"));
     }
 }

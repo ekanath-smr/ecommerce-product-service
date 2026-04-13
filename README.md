@@ -1,55 +1,84 @@
-# Product Service
+# Ecommerce Product Service
 
-A **Spring Boot microservice** responsible for managing **Products** and **Categories** in an e-commerce system.
+A production-style **Spring Boot microservice** for managing **Products** and **Hierarchical Categories** in an e-commerce platform.
 
-This service exposes REST APIs to:
-
-* Create products and categories
-* Update product/category details
-* Delete products and categories
-* Retrieve products with pagination and sorting
-* Search products using filters
-
-This service is designed as part of a **scalable microservices-based e-commerce backend**.
+Designed as part of a scalable **microservices-based backend architecture**, this service provides robust REST APIs for product/catalog management with validation, pagination, filtering, exception handling, and business-rule enforcement.
 
 ---
 
 # Features
 
-* Product CRUD operations
-* Category CRUD operations
-* Product search with filters
-* Pagination and sorting
-* Global exception handling
-* Logging using SLF4J
-* DTO-based API layer
-* Unit testing with JUnit and Mockito
-* API documentation using Swagger / OpenAPI
+## Product Management
+- Create Product
+- Update Product
+- Delete Product
+- Get Product By ID
+- Get All Products with Pagination & Sorting
+- Search Products with Dynamic Filters
+
+## Category Management
+- Create Category
+- Update Category
+- Delete Category
+- Get Category By ID / Name
+- Hierarchical Parent-Child Category Support
+- Circular Hierarchy Prevention
+- Prevent Deletion of Parent Categories with Children
+
+## Backend Engineering Features
+- DTO-based Request/Response Architecture
+- Centralized Global Exception Handling
+- Validation using Jakarta Bean Validation
+- SLF4J Structured Logging
+- Swagger/OpenAPI Documentation
+- Unit Testing with JUnit + Mockito
 
 ---
 
 # Tech Stack
 
-* Java 21
-* Spring Boot
-* Spring Web
-* Spring Data JPA
-* Hibernate
-* MySQL / H2
-* Lombok
-* Maven
-* Swagger (OpenAPI)
-* JUnit
-* Mockito
+- **Java 21**
+- **Spring Boot**
+- **Spring Web**
+- **Spring Data JPA**
+- **Hibernate**
+- **MySQL / H2**
+- **Lombok**
+- **Maven**
+- **Swagger / OpenAPI**
+- **JUnit 5**
+- **Mockito**
+
+---
+
+# Architecture / Design Highlights
+
+- Implemented **layered architecture**:
+    - Controller Layer
+    - Service Layer
+    - Repository Layer
+
+- Applied **DTO + Mapper Pattern** to decouple API contract from persistence models.
+
+- Built **Hierarchical Category Management**:
+    - Parent-child relationships
+    - Circular dependency prevention
+    - Business-rule enforced deletion constraints
+
+- Implemented **Dynamic Product Search**:
+    - Keyword Search
+    - Category Filter
+    - Price Range Filter
+    - Pagination & Sorting
 
 ---
 
 # Project Structure
 
-```
-src/main/java/com/example/productservice
+```text
+src/main/java/com/example/ProductService
 
-├── controller
+├── controllers
 ├── services
 ├── repositories
 ├── models
@@ -62,270 +91,3 @@ src/main/java/com/example/productservice
 src/test/java
 
 └── services
-```
-
----
-
-# API Documentation
-
-Swagger UI is available at:
-
-```
-http://localhost:8080/swagger-ui/index.html
-```
-
-This provides an interactive interface to test all APIs.
-
----
-
-# API Endpoints
-
-## Product APIs
-
-### Create Product
-
-POST /products
-
-Request Body
-
-```json
-{
-  "title": "iPhone 15",
-  "price": 1200,
-  "description": "Latest Apple smartphone",
-  "categoryName": "Electronics",
-  "imageUrl": "image-url"
-}
-```
-
----
-
-### Get Product By Id
-
-```
-GET /products/{id}
-```
-
-Example
-
-```
-GET /products/1
-```
-
----
-
-### Update Product
-
-```
-PUT /products/{id}
-```
-
----
-
-### Delete Product
-
-```
-DELETE /products/{id}
-```
-
----
-
-### Get All Products
-
-Supports pagination and sorting.
-
-```
-GET /products?page=0&size=10&sortBy=id&sortDirection=asc
-```
-
----
-
-### Search Products
-
-Search products using filters.
-
-```
-GET /products/search
-```
-
-Example
-
-```
-GET /products/search?keyword=iphone&categoryName=Electronics&minPrice=500&maxPrice=2000&page=0&size=10
-```
-
----
-
-# Category APIs
-
-### Create Category
-
-```
-POST /categories
-```
-
-Request Body
-
-```json
-{
-  "name": "Electronics",
-  "description": "Electronic items"
-}
-```
-
----
-
-### Get Category By Id
-
-```
-GET /categories/{id}
-```
-
----
-
-### Get Category By Name
-
-```
-GET /categories/name/{name}
-```
-
----
-
-### Update Category
-
-```
-PUT /categories/{id}
-```
-
----
-
-### Delete Category
-
-```
-DELETE /categories/{id}
-```
-
----
-
-### Get All Categories
-
-Supports pagination and sorting.
-
-```
-GET /categories?page=0&size=10&sortBy=id&sortDirection=asc
-```
-
----
-
-# Exception Handling
-
-Global exception handling is implemented using `@ControllerAdvice`.
-
-Example error response:
-
-```json
-{
-  "timestamp": "2026-03-10T10:30:00",
-  "status": 404,
-  "error": "Product Not Found",
-  "message": "Product with id 10 not found"
-}
-```
-
----
-
-# Testing
-
-Unit tests are implemented for the service layer using:
-
-* JUnit
-* Mockito
-
-Test classes:
-
-* `CategoryServiceImplTest`
-* `ProductServiceImplTest`
-
-Run tests using:
-
-```
-mvn test
-```
-
----
-
-# Logging
-
-Logging is implemented using **SLF4J**.
-
-Log levels used:
-
-* INFO → create/update operations
-* DEBUG → fetch/search operations
-* WARN → invalid input or missing resources
-* ERROR → unexpected system failures
-
----
-
-# How to Run
-
-Clone the repository
-
-```
-git clone <repo-url>
-```
-
-Navigate to the project
-
-```
-cd product-service
-```
-
-Build the project
-
-```
-mvn clean install
-```
-
-Run the application
-
-```
-mvn spring-boot:run
-```
-
-Application will start at:
-
-```
-http://localhost:8080
-```
-
-Swagger UI:
-
-```
-http://localhost:8080/swagger-ui/index.html
-```
-
----
-
-# Future Improvements
-
-* Integration testing
-* Docker containerization
-* API Gateway integration
-* Service discovery (Eureka)
-* Distributed tracing
-* Authentication and authorization using JWT
-
----
-
-# Author
-
-Backend microservice built using **Spring Boot** demonstrating:
-
-* REST API design
-* Pagination and filtering
-* DTO mapping
-* Global exception handling
-* Logging
-* Unit testing
-* API documentation

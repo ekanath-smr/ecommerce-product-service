@@ -1,10 +1,9 @@
 package com.example.ProductService.dtos;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.Data;
+
+import java.math.BigDecimal;
 
 @Data
 public class ProductRequestDto {
@@ -12,7 +11,8 @@ public class ProductRequestDto {
     private String title;
     @NotNull
     @Positive
-    private double price;
+    @Digits(integer = 10, fraction = 2)
+    private BigDecimal price;
     @Size(max = 1000)
     private String description;
     @NotBlank

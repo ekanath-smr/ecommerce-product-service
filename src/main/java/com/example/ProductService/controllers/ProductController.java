@@ -1,9 +1,8 @@
 package com.example.ProductService.controllers;
 
-import com.example.ProductService.dtos.*;
-import com.example.ProductService.exceptions.InvalidCategoryNameException;
-import com.example.ProductService.exceptions.InvalidProductIdException;
-import com.example.ProductService.exceptions.ProductAlreadyExistException;
+import com.example.ProductService.dtos.ProductDto;
+import com.example.ProductService.dtos.ProductRequestDto;
+import com.example.ProductService.dtos.ProductSearchCriteria;
 import com.example.ProductService.mappers.ProductMapper;
 import com.example.ProductService.models.Product;
 import com.example.ProductService.services.ProductService;
@@ -11,103 +10,160 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Qualifier;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Positive;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import static com.example.ProductService.mappers.ProductMapper.mapProductToProductDto;
-
 @RestController
+@Validated
 @RequestMapping("/products")
 public class ProductController {
 
+    private static final Logger logger = LoggerFactory.getLogger(ProductController.class);
+
     private final ProductService productService;
 
-    public ProductController(@Qualifier("productServiceImpl")  ProductService productService) {
+    public ProductController(ProductService productService) {
         this.productService = productService;
     }
 
     @Operation(summary = "Get product by ID", description = "Fetches a product by its unique ID.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Product fetched successfully"),
-            @ApiResponse(responseCode = "404", description = "Invalid product ID")
+            @ApiResponse(responseCode = "404", description = "Product not found")
     })
     @GetMapping("/{productId}")
-    public ProductDto getProductById(@PathVariable Long productId) throws InvalidProductIdException {
+    public ResponseEntity<ProductDto> getProductById(@PathVariable @Positive Long productId) {
+        logger.debug("Fetching product with id: {}", productId);
+
         Product product = productService.getProductById(productId);
-        return mapProductToProductDto(product);
+
+        logger.debug("Product fetched successfully for id: {}", productId);
+
+        return ResponseEntity.ok(
+                ProductMapper.mapProductToProductDto(product)
+        );
     }
 
-    @Operation(summary = "Get all products with pagination", description = "Returns a paginated list of all products with sorting options.")
+    @Operation(summary = "Get all products with pagination",
+            description = "Returns a paginated list of all products with sorting options.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Products fetched successfully")
     })
     @GetMapping
-    public Page<ProductDto> getAllProducts(@RequestParam(defaultValue = "0") int page,
-                                           @RequestParam(defaultValue = "10") int size,
-                                           @RequestParam(defaultValue = "id") String sortBy,
-                                           @RequestParam(defaultValue = "asc") String sortDirection) {
-        Page<Product> products = productService.getAllProducts(page, size, sortBy, sortDirection);
-        return products.map(ProductMapper::mapProductToProductDto);
+    public ResponseEntity<Page<ProductDto>> getAllProducts(
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDirection) {
+
+        logger.debug("Fetching products page={}, size={}, sortBy={}, direction={}",
+                page, size, sortBy, sortDirection);
+
+        Page<ProductDto> result = productService
+                .getAllProducts(page, size, sortBy, sortDirection)
+                .map(ProductMapper::mapProductToProductDto);
+
+        return ResponseEntity.ok(result);
     }
 
-    @Operation(summary = "Create a new product", description = "Creates a new product with title, price, description, category, and image.")
+    @Operation(summary = "Create a new product",
+            description = "Creates a new product with title, price, description, category, and image.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Product created successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid input or product already exists")
+            @ApiResponse(responseCode = "201", description = "Product created successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input / Product already exists")
     })
     @PostMapping
-    public ProductDto createProduct(@Valid @RequestBody ProductRequestDto requestDto)
-            throws InvalidCategoryNameException, ProductAlreadyExistException {
-        Product product = productService.createProduct(requestDto.getTitle(), requestDto.getPrice(),
-                requestDto.getDescription(), requestDto.getCategory(), requestDto.getImage());
-        return mapProductToProductDto(product);
+    public ResponseEntity<ProductDto> createProduct(
+            @Valid @RequestBody ProductRequestDto productRequestDto) {
+
+        logger.info("Creating product with title: {}", productRequestDto.getTitle());
+
+        Product product = productService.createProduct(productRequestDto);
+
+        logger.info("Product created successfully with id: {}", product.getId());
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ProductMapper.mapProductToProductDto(product));
     }
 
-    @Operation(summary = "Update product", description = "Updates an existing product by its ID.")
+    @Operation(summary = "Update product",
+            description = "Updates an existing product by its ID.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Product updated successfully"),
-            @ApiResponse(responseCode = "404", description = "Invalid product ID or category")
+            @ApiResponse(responseCode = "404", description = "Product not found")
     })
     @PatchMapping("/{productId}")
-    public ProductDto updateProduct(@PathVariable Long productId, @Valid @RequestBody ProductRequestDto requestDto)
-            throws InvalidCategoryNameException, InvalidProductIdException {
-        Product updatedProduct = productService.updateProduct(productId, requestDto.getTitle(), requestDto.getPrice(),
-                requestDto.getDescription(), requestDto.getCategory(), requestDto.getImage());
-        return mapProductToProductDto(updatedProduct);
+    public ResponseEntity<ProductDto> updateProduct(
+            @PathVariable @Positive Long productId,
+            @Valid @RequestBody ProductRequestDto productRequestDto) {
+
+        logger.info("Updating product with id: {}", productId);
+
+        Product updatedProduct = productService.updateProduct(productId, productRequestDto);
+
+        logger.info("Product updated successfully with id: {}", productId);
+
+        return ResponseEntity.ok(
+                ProductMapper.mapProductToProductDto(updatedProduct)
+        );
     }
 
-    @Operation(summary = "Delete product", description = "Deletes a product by its unique ID.")
+    @Operation(summary = "Delete product",
+            description = "Deletes a product by its unique ID.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Product deleted successfully"),
-            @ApiResponse(responseCode = "404", description = "Invalid product ID")
+            @ApiResponse(responseCode = "204", description = "Product deleted successfully"),
+            @ApiResponse(responseCode = "404", description = "Product not found")
     })
     @DeleteMapping("/{productId}")
-    public boolean deleteProductById(@PathVariable Long productId) throws InvalidProductIdException {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteProductById(@PathVariable @Positive Long productId) {
+
+        logger.warn("Deleting product with id: {}", productId);
+
         productService.deleteProductById(productId);
-        return true;
+
+        logger.warn("Product deleted successfully with id: {}", productId);
     }
 
-    @Operation(summary = "Search products", description = "Search products by keyword, category, and price range with pagination and sorting.")
+    @Operation(summary = "Search products",
+            description = "Search products by keyword, category, and price range with pagination and sorting.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Search results returned successfully")
     })
     @GetMapping("/search")
-    public Page<ProductDto> searchProducts(@RequestParam(required = false) String keyword,
-                                           @RequestParam(required = false) String categoryName,
-                                           @RequestParam(required = false) Double minPrice,
-                                           @RequestParam(required = false) Double maxPrice,
-                                           @RequestParam(defaultValue = "0") int page,
-                                           @RequestParam(defaultValue = "10") int size,
-                                           @RequestParam(defaultValue = "price") String sortBy,
-                                           @RequestParam(defaultValue = "asc") String sortDirection) {
-        return productService.searchProducts(keyword, categoryName, minPrice, maxPrice, page, size, sortBy, sortDirection)
+    public ResponseEntity<Page<ProductDto>> searchProducts(
+            @RequestParam(required = false) String keyword, @RequestParam(required = false) String categoryName,
+            @RequestParam(required = false) java.math.BigDecimal minPrice, @RequestParam(required = false) java.math.BigDecimal maxPrice,
+            @RequestParam(defaultValue = "0") @Min(0) int page, @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size,
+            @RequestParam(defaultValue = "price") String sortBy, @RequestParam(defaultValue = "asc") String sortDirection) {
+
+        logger.debug("Searching products with filters keyword={}, category={}, minPrice={}, maxPrice={}",
+                keyword, categoryName, minPrice, maxPrice);
+
+        ProductSearchCriteria criteria = ProductSearchCriteria.builder()
+                .keyword(keyword)
+                .categoryName(categoryName)
+                .minPrice(minPrice)
+                .maxPrice(maxPrice)
+                .page(page)
+                .size(size)
+                .sortBy(sortBy)
+                .sortDirection(sortDirection)
+                .build();
+
+        Page<ProductDto> result = productService
+                .searchProducts(criteria)
                 .map(ProductMapper::mapProductToProductDto);
+
+        return ResponseEntity.ok(result);
     }
-
-//    @ExceptionHandler(InvalidProductIdException.class)
-//    public ResponseEntity<String> handleProductNotFoundException(InvalidProductIdException invalidProductIdException) {
-//        return new ResponseEntity<>("LocalExceptionHandler: " + invalidProductIdException.getProductId() + " is an invalid product id, Please pass a valid product id", HttpStatus.NOT_FOUND);
-//    }
-
 }

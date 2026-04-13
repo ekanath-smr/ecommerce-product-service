@@ -8,7 +8,7 @@ import org.springframework.web.client.RestTemplate;
 public class ApplicationConfiguration {
     // create a bean for rest template and store it in the application context
     @Bean
-    public RestTemplate createRestTemplate() {
+    public RestTemplate restTemplate() {
         return new RestTemplate();
     }
 }

@@ -7,16 +7,18 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ProductRepository extends JpaRepository<Product, Long> {
+public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpecificationExecutor<Product> {
 
     //Derived Queries // select * from products p where p.id = ?
     // Optional is used for compile time safety check for null pointer exception NPE
@@ -41,11 +43,11 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 //    List<Product> findByTitleContainsIgnoreCaseAndPriceBetween(String keyword, Double minPrice, Double maxPrice);
 
     // Derived Queries
-    List<Product> findByCreatedAtBetween(Date start, Date end);
+//    List<Product> findByCreatedAtBetween(Date start, Date end);
 
     // Built-in CRUD methods from JpaRepository
     @Override
-    void deleteById(Long aLong);
+    void deleteById(Long productId);
 
     // Built-in CRUD methods from JpaRepository
     Product save(Product product);
@@ -64,7 +66,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     // here we use entity className and entity fieldName directly in the query.
     // Portable from one database to another.
     @Query("select p.title, p.price from Product p where p.id = :id")
-    ProductWithTitleAndPrice findTitleAndPriceById(@Param("id") Long id);
+    Optional<ProductWithTitleAndPrice> findTitleAndPriceById(@Param("id") Long id);
 
     // Derived Queries
 //    Optional<Product> findByCategory(Category category);
@@ -72,6 +74,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     // Derived Queries
 //    Optional<Product> findByCategory_Name(String categoryName);
 
+    // This way of searching is not reliable because filters can grow, so use jpa specifications
     @Query("""
             select p
             from Product p
@@ -81,6 +84,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             and (:maxPrice is null or p.price <= :maxPrice))
             """)
     Page<Product> search(@Param("keyword") String keyword, @Param("categoryName") String categoryName,
-                         @Param("minPrice") Double minPrice, @Param("maxPrice") Double maxPrice, Pageable pageable);
+                         @Param("minPrice") BigDecimal minPrice, @Param("maxPrice") BigDecimal maxPrice, Pageable pageable);
 
 }
