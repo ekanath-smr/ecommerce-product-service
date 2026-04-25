@@ -11,6 +11,7 @@ import com.example.ProductService.models.Product;
 import com.example.ProductService.repositories.CategoryRepository;
 import com.example.ProductService.repositories.ProductRepository;
 import com.example.ProductService.specifications.ProductSpecification;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Primary;
@@ -31,11 +32,11 @@ import java.util.Optional;
 @Service("productServiceImpl")
 @Primary
 @Transactional
+@Slf4j
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
-    private static final Logger logger = LoggerFactory.getLogger(ProductServiceImpl.class);
 
     public ProductServiceImpl(ProductRepository productRepository, CategoryRepository categoryRepository) {
         this.productRepository = productRepository;
@@ -45,24 +46,30 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public Product getProductById(Long productId) {
-        logger.debug("Fetching product with id: {}", productId);
-        Optional<Product> productOptional = productRepository.findById(productId);
-        if(productOptional.isEmpty()) {
-            logger.warn("Product with id {} not found", productId);
-//            throw new InvalidProductIdException("Invalid product id", productId);
-            throw new ProductNotFoundException("Product with this id not found", productId);
-        }
-        return productOptional.get();
+        log.debug("Fetching product with id={}", productId);
+
+        return productRepository.findById(productId)
+                .orElseThrow(() -> {
+                    log.warn("Product not found for id={}", productId);
+                    return new ProductNotFoundException("Product with this id not found", productId);
+                });
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean validateProductById(Long productId) {
+        log.debug("Validating existence of product with id={}", productId);
+        return productRepository.existsById(productId);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<Product> getAllProducts(int page, int size, String sortBy, String sortDirection) {
-        logger.debug("Fetching all products page={}, size={}, sortBy={}, sortDirection={}", page, size, sortBy, sortDirection);
+        log.debug("Fetching all products page={}, size={}, sortBy={}, sortDirection={}", page, size, sortBy, sortDirection);
         Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
         Page<Product> products = productRepository.findAll(pageable);
-        logger.debug("Fetched {} products", products.getNumberOfElements());
+        log.debug("Fetched {} products out of total {}", products.getNumberOfElements(), products.getTotalElements());
         return products;
     }
 
@@ -88,11 +95,10 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public Page<Product> searchProducts(ProductSearchCriteria criteria) {
-        logger.debug(
-                "Searching products keyword={}, category={}, minPrice={}, maxPrice={}",
+        log.debug("Searching products with criteria: keyword={}, category={}, minPrice={}, maxPrice={}, page={}, size={}",
                 criteria.getKeyword(), criteria.getCategoryName(),
-                criteria.getMinPrice(), criteria.getMaxPrice()
-        );
+                criteria.getMinPrice(), criteria.getMaxPrice(),
+                criteria.getPage(), criteria.getSize());
         Sort sort = Sort.by(
                 Sort.Direction.fromString(criteria.getSortDirection()),
                 criteria.getSortBy()
@@ -105,17 +111,20 @@ public class ProductServiceImpl implements ProductService {
                 .and(ProductSpecification.hasCategory(criteria.getCategoryName()))
                 .and(ProductSpecification.minPrice(criteria.getMinPrice()))
                 .and(ProductSpecification.maxPrice(criteria.getMaxPrice()));
-        return productRepository.findAll(spec, pageable);
+        Page<Product> result = productRepository.findAll(spec, pageable);
+        log.debug("Search returned {} products (total={})",
+                result.getNumberOfElements(), result.getTotalElements());
+        return result;
     }
 
     @Override
     public Product createProduct(ProductRequestDto productRequestDto) {
         String title = productRequestDto.getTitle();
 
-        logger.info("Creating product: {}", title);
+        log.info("Creating product with title={}", title);
         Optional<Product> productOptional = productRepository.findByTitle(title);
         if(productOptional.isPresent()) {
-            logger.warn("Product already exists with title: {}", title);
+            log.warn("Product already exists with title={}", title);
             throw new ProductAlreadyExistException("Product with title: " + title + ", already exist.", title);
         }
         Product product = new Product();
@@ -124,17 +133,18 @@ public class ProductServiceImpl implements ProductService {
                 productRequestDto.getCategory(), productRequestDto.getImage(), product
         );
         productRepository.save(product);
-        logger.info("Product created successfully with id: {}", product.getId());
+        log.info("Product created successfully id={}, title={}", product.getId(), product.getTitle());
         return product;
     }
 
     @Override
     public Product updateProduct(Long productId, ProductRequestDto productRequestDto) {
-        logger.info("Updating product id: {}", productId);
+        log.info("Updating product with id={}", productId);
         Product product = null;
         try {
             product = getProductById(productId);
         } catch (ProductNotFoundException e) {
+            log.warn("Update failed. Product not found id={}", productId);
             throw new InvalidProductIdException("Invalid product id", productId);
         }
         populateProductFields(
@@ -143,33 +153,36 @@ public class ProductServiceImpl implements ProductService {
                 productRequestDto.getImage(), product
         );
         productRepository.save(product);
-        logger.info("Product updated successfully: {}", productId);
+        log.info("Product updated successfully id={}, title={}", productId, product.getTitle());
         return product;
     }
 
     @Override
     public void deleteProductById(Long productId) {
-        logger.warn("Deleting product with id: {}", productId);
+        log.warn("Deleting product with id={}", productId);
         Optional<Product> productOptional = productRepository.findById(productId);
         if(productOptional.isEmpty()) {
+            log.warn("Delete failed. Product not found id={}", productId);
             throw new InvalidProductIdException("Product with id " + productId + ", doesn't exist to delete", productId);
         }
         productRepository.deleteById(productId);
-        logger.warn("Product deleted successfully: {}", productId);
+        log.warn("Product deleted successfully id={}", productId);
     }
 
     private void populateProductFields(String title, BigDecimal price, String description, String categoryName, String imageUrl, Product product) {
+        log.debug("Populating product fields for title={}", title);
         product.setTitle(title);
         product.setPrice(price);
         product.setDescription(description);
         Optional<Category> categoryOptional = categoryRepository.findByName(categoryName);
         if(categoryOptional.isEmpty()) {
-            logger.warn("Category not found: {}", categoryName);
+            log.warn("Invalid category name provided: {}", categoryName);
             throw new InvalidCategoryNameException("Invalid category name.", categoryName);
         } else {
             product.setCategory(categoryOptional.get());
         }
         product.setImageUrl(imageUrl);
+        log.debug("Product fields populated successfully for title={}", title);
     }
 
 }

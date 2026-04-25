@@ -160,6 +160,7 @@ class CategoryServiceImplTest {
     @Test
     void updateCategory_shouldThrow_whenDuplicateNameExists() {
         when(categoryRepository.findByName("Clothing")).thenReturn(Optional.of(category2));
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category2));
 
         assertThrows(CategoryAlreadyExistsException.class,
                 () -> categoryService.updateCategory(

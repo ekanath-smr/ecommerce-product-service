@@ -42,14 +42,22 @@ public class ProductController {
     @GetMapping("/{productId}")
     public ResponseEntity<ProductDto> getProductById(@PathVariable @Positive Long productId) {
         logger.debug("Fetching product with id: {}", productId);
-
         Product product = productService.getProductById(productId);
-
         logger.debug("Product fetched successfully for id: {}", productId);
-
         return ResponseEntity.ok(
                 ProductMapper.mapProductToProductDto(product)
         );
+    }
+
+    @Operation(summary = "Validate product existence", description = "Checks whether a product exists by its ID.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Validation successful")
+    })
+    @GetMapping("/{productId}/exists")
+    public ResponseEntity<Boolean> validateProductById(@PathVariable @Positive Long productId) {
+        logger.debug("Validating product with id: {}", productId);
+        boolean exists = productService.validateProductById(productId);
+        return ResponseEntity.ok(exists);
     }
 
     @Operation(summary = "Get all products with pagination",
@@ -63,14 +71,11 @@ public class ProductController {
             @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDirection) {
-
         logger.debug("Fetching products page={}, size={}, sortBy={}, direction={}",
                 page, size, sortBy, sortDirection);
-
         Page<ProductDto> result = productService
                 .getAllProducts(page, size, sortBy, sortDirection)
                 .map(ProductMapper::mapProductToProductDto);
-
         return ResponseEntity.ok(result);
     }
 
@@ -83,13 +88,9 @@ public class ProductController {
     @PostMapping
     public ResponseEntity<ProductDto> createProduct(
             @Valid @RequestBody ProductRequestDto productRequestDto) {
-
         logger.info("Creating product with title: {}", productRequestDto.getTitle());
-
         Product product = productService.createProduct(productRequestDto);
-
         logger.info("Product created successfully with id: {}", product.getId());
-
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(ProductMapper.mapProductToProductDto(product));
@@ -105,13 +106,9 @@ public class ProductController {
     public ResponseEntity<ProductDto> updateProduct(
             @PathVariable @Positive Long productId,
             @Valid @RequestBody ProductRequestDto productRequestDto) {
-
         logger.info("Updating product with id: {}", productId);
-
         Product updatedProduct = productService.updateProduct(productId, productRequestDto);
-
         logger.info("Product updated successfully with id: {}", productId);
-
         return ResponseEntity.ok(
                 ProductMapper.mapProductToProductDto(updatedProduct)
         );
@@ -126,11 +123,8 @@ public class ProductController {
     @DeleteMapping("/{productId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteProductById(@PathVariable @Positive Long productId) {
-
         logger.warn("Deleting product with id: {}", productId);
-
         productService.deleteProductById(productId);
-
         logger.warn("Product deleted successfully with id: {}", productId);
     }
 
@@ -150,15 +144,10 @@ public class ProductController {
                 keyword, categoryName, minPrice, maxPrice);
 
         ProductSearchCriteria criteria = ProductSearchCriteria.builder()
-                .keyword(keyword)
-                .categoryName(categoryName)
-                .minPrice(minPrice)
-                .maxPrice(maxPrice)
-                .page(page)
-                .size(size)
-                .sortBy(sortBy)
-                .sortDirection(sortDirection)
-                .build();
+                .keyword(keyword).categoryName(categoryName)
+                .minPrice(minPrice).maxPrice(maxPrice)
+                .page(page).size(size).sortBy(sortBy)
+                .sortDirection(sortDirection).build();
 
         Page<ProductDto> result = productService
                 .searchProducts(criteria)

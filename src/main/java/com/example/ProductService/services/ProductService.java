@@ -17,6 +17,7 @@ public interface ProductService {
     Product updateProduct(Long productId, ProductRequestDto productRequestDto);
     void deleteProductById(Long productId);
     Product getProductById(Long productId);
+    boolean validateProductById(Long productId);
     Page<Product> getAllProducts(int page, int size, String sortBy, String sortDirection);
     Page<Product> searchProducts(ProductSearchCriteria productSearchCriteria);
 }

@@ -65,7 +65,7 @@ class ProductServiceImplTest {
         assertNotNull(result);
         assertAll(
                 () -> assertEquals("iPhone", result.getTitle()),
-                () -> assertEquals(BigDecimal.valueOf(1000), result.getPrice()),
+                () -> assertEquals(BigDecimal.valueOf(1000.0), result.getPrice()),
                 () -> assertEquals("Electronics", result.getCategory().getName())
         );
         verify(productRepository).findById(1L);
@@ -113,7 +113,11 @@ class ProductServiceImplTest {
         when(categoryRepository.findByName("Electronics")).thenReturn(Optional.of(category));
         ProductRequestDto productRequestDto = ProductMapper.getProductRequestDtoFrom("iPhone", BigDecimal.valueOf(1000), "Apple phone", "Electronics", "image.jpg");
         Product result = productService.createProduct(productRequestDto);
-        assertEquals("iPhone", result.getTitle());
+        assertAll(
+                () -> assertEquals("iPhone", result.getTitle()),
+                () -> assertEquals(BigDecimal.valueOf(1000), result.getPrice()),
+                () -> assertEquals("Electronics", result.getCategory().getName())
+        );
         verify(productRepository).findByTitle("iPhone");
         verify(categoryRepository).findByName("Electronics");
         verify(productRepository).save(any(Product.class));
@@ -171,5 +175,20 @@ class ProductServiceImplTest {
         when(productRepository.findById(1L)).thenReturn(Optional.empty());
         assertThrows(InvalidProductIdException.class, () -> productService.deleteProductById(1L));
         verify(productRepository).findById(1L);
+    }
+
+    @Test
+    void testValidateProductByIdTrue() {
+        when(productRepository.existsById(1L)).thenReturn(true);
+        boolean result = productService.validateProductById(1L);
+        assertTrue(result);
+        verify(productRepository).existsById(1L);
+    }
+
+    @Test
+    void testValidateProductByIdFalse() {
+        when(productRepository.existsById(1L)).thenReturn(false);
+        boolean result = productService.validateProductById(1L);
+        assertFalse(result);
     }
 }
