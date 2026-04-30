@@ -32,6 +32,9 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     // Derived Queries // select * from products where title = ?
     Optional<Product> findByTitle(String title);
 
+    // Derived Queries // select count(*) >= 1 from products where category_id = ?
+    boolean existsByCategory_Id(Long categoryId);
+
     // Derived Queries //select * from products where title LIKE '%iPhone%'
 //    Page<Product> findByTitleContainsIgnoreCase(String keyword, Pageable pageable);
 

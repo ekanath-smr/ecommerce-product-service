@@ -5,8 +5,10 @@ import com.example.ProductService.dtos.CategoryRequestDto;
 import com.example.ProductService.exceptions.*;
 import com.example.ProductService.models.Category;
 import com.example.ProductService.repositories.CategoryRepository;
+import com.example.ProductService.repositories.ProductRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -25,10 +27,13 @@ public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
 
+    private final ProductRepository productRepository;
+
     private static final Logger logger = LoggerFactory.getLogger(CategoryServiceImpl.class);
 
-    public CategoryServiceImpl(CategoryRepository categoryRepository) {
+    public CategoryServiceImpl(CategoryRepository categoryRepository, ProductRepository productRepository) {
         this.categoryRepository = categoryRepository;
+        this.productRepository = productRepository;
     }
 
     @Override
@@ -74,12 +79,16 @@ public class CategoryServiceImpl implements CategoryService {
     public void deleteCategoryById(Long categoryId) {
         logger.info("Deleting category with id={}", categoryId);
         Category category = getCategoryById(categoryId);
-        if (!category.getSubCategories().isEmpty()) {
+        if (category.getSubCategories() != null && !category.getSubCategories().isEmpty()) {
             int childCount = category.getSubCategories().size();
             logger.warn("Delete failed for categoryId={} - has {} child categories", categoryId, childCount);
-            throw new CannotDeleteParentCategoryException("Cannot delete parent category with child categories");
+            throw new CannotDeleteParentCategoryException("Cannot delete category because it has " + childCount + " child categories");
         }
-        categoryRepository.deleteById(categoryId);
+        boolean hasProducts = productRepository.existsByCategory_Id(categoryId);
+        if (hasProducts) {
+            throw new CannotDeleteCategoryException("Cannot delete category. It has associated products.");
+        }
+        categoryRepository.delete(category);
         logger.info("Category deleted successfully with id={}", categoryId);
     }
 

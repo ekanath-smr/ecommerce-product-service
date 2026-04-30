@@ -76,7 +76,7 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.CONFLICT, "Category Already Exists", ex.getMessage());
     }
 
-    @ExceptionHandler({InvalidCategoryHierarchyException.class,
+    @ExceptionHandler({InvalidCategoryHierarchyException.class, CannotDeleteCategoryException.class,
             InvalidParentAssignmentException.class, CannotDeleteParentCategoryException.class})
     public ResponseEntity<ErrorResponseDto> handleCategoryBusinessRuleViolations(RuntimeException ex) {
         logger.warn("Category business rule violation: {}", ex.getMessage());
