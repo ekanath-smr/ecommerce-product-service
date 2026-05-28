@@ -11,6 +11,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.*;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -18,41 +19,73 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
 import static com.example.ProductService.mappers.ProductMapper.*;
 
-//@Primary
+@Primary
 @Service("fakeStoreProductServiceImpl")
 @Slf4j
 public class FakeStoreProductServiceImpl implements ProductService {
 
     private final RestTemplate restTemplate;
     private final String BASE_URL = "https://fakestoreapi.com/products";
+    private RedisTemplate<String, Object> redisTemplate;
 
-    public FakeStoreProductServiceImpl(RestTemplate restTemplate) {
+    public FakeStoreProductServiceImpl(RestTemplate restTemplate, RedisTemplate<String, Object> redisTemplate) {
         this.restTemplate = restTemplate;
+        this.redisTemplate = redisTemplate;
     }
+
+//    @Override
+//    public Product getProductById(Long productId) {
+//        log.debug("Fetching product from FakeStore API for productId={}", productId);
+//        // make an http call to fakestore api to get the product of the given productId and return the product.
+//        // https://fakestoreapi.com/products/{productId}
+//        // one of the way to make http call is to use RestTemplate class provided by Spring framework.
+//        // create a bean of RestTemplate class in the configuration class and inject it here using constructor injection.
+//        // RestTemplate restTemplate = new RestTemplate();
+//        String url = BASE_URL + "/" + productId;
+//        ResponseEntity<ProductDto> responseEntity = restTemplate.getForEntity(url, ProductDto.class);
+//        if(!responseEntity.hasBody()) {
+//            log.warn("Empty response received from FakeStore API for productId={}", productId);
+//            throw new ProductNotFoundException("Invalid product id: " + productId, productId);
+//        }
+//        ProductDto productDto = responseEntity.getBody();
+//        log.debug("Successfully fetched product from FakeStore API: productId={}, title={}", productDto.getId(), productDto.getTitle());
+//        return ProductMapper.mapProductDtoToProduct(productDto);
+//    }
 
     @Override
     public Product getProductById(Long productId) {
+        String cacheKey = "product:" + productId;
+
+        // 1. Check Redis Cache
+        Product cachedProduct = (Product) redisTemplate.opsForValue().get(cacheKey);
+        if (cachedProduct != null) {
+            log.debug("Product fetched from Redis cache for productId={}", productId);
+            return cachedProduct;
+        }
+
+        // 2. Fetch From FakeStore API
         log.debug("Fetching product from FakeStore API for productId={}", productId);
-        // make an http call to fakestore api to get the product of the given productId and return the product.
-        // https://fakestoreapi.com/products/{productId}
-        // one of the way to make http call is to use RestTemplate class provided by Spring framework.
-        // create a bean of RestTemplate class in the configuration class and inject it here using constructor injection.
-        // RestTemplate restTemplate = new RestTemplate();
         String url = BASE_URL + "/" + productId;
         ResponseEntity<ProductDto> responseEntity = restTemplate.getForEntity(url, ProductDto.class);
-        if(!responseEntity.hasBody()) {
+        if (!responseEntity.hasBody()) {
             log.warn("Empty response received from FakeStore API for productId={}", productId);
             throw new ProductNotFoundException("Invalid product id: " + productId, productId);
         }
         ProductDto productDto = responseEntity.getBody();
-        log.debug("Successfully fetched product from FakeStore API: productId={}, title={}", productDto.getId(), productDto.getTitle());
-        return ProductMapper.mapProductDtoToProduct(productDto);
+        Product product = ProductMapper.mapProductDtoToProduct(productDto);
+
+        // 3. Store In Redis With TTL
+        redisTemplate.opsForValue().set(cacheKey, product, Duration.ofMinutes(10));
+
+        log.debug("Successfully fetched and cached product: productId={}, title={}", product.getId(), product.getTitle());
+        return product;
     }
 
     @Override
