@@ -30,7 +30,7 @@ import java.util.Optional;
 // dynamic filtering/search via JPA Specifications, category association validation, duplicate product prevention, and centralized exception handling.
 
 @Service("productServiceImpl")
-//@Primary
+@Primary
 @Transactional
 @Slf4j
 public class ProductServiceImpl implements ProductService {

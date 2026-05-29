@@ -26,7 +26,7 @@ import java.util.List;
 
 import static com.example.ProductService.mappers.ProductMapper.*;
 
-@Primary
+//@Primary
 @Service("fakeStoreProductServiceImpl")
 @Slf4j
 public class FakeStoreProductServiceImpl implements ProductService {
