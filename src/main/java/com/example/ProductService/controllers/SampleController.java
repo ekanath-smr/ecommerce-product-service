@@ -1,5 +1,6 @@
 package com.example.ProductService.controllers;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,6 +13,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class SampleController {
     // This is a sample controller class.
     // You can add methods here to handle HTTP requests.
+
+    @Value("${server.port}")
+    private String port;
 
     @GetMapping("/hello/{name}/{times}") // "localhost:8080/sample/hello"
     public String sayHello(@PathVariable("name") String name, @PathVariable("times") int times) {
@@ -28,6 +32,11 @@ public class SampleController {
     @GetMapping("/hi") // "localhost:8080/sample/hi"
     public String sayHi() {
         return "Hi, this is a hi sample method";
+    }
+
+    @GetMapping("/whoami")
+    public String whoAmI() {
+        return "I am running on port " + port;
     }
 }
 

@@ -1,75 +1,121 @@
 # Ecommerce Product Service
 
-A production-style **Spring Boot microservice** for managing **Products** and **Hierarchical Categories** in an e-commerce platform.
+A production-grade **Spring Boot microservice** responsible for managing Products and Hierarchical Categories within a scalable e-commerce platform.
 
-Designed as part of a scalable **microservices-based backend architecture**, this service provides robust REST APIs for product/catalog management with validation, pagination, filtering, exception handling, and business-rule enforcement.
+The service provides catalog management APIs, advanced product search capabilities, Redis-based caching, service discovery integration, and seamless communication within a distributed microservices architecture.
 
 ---
 
 # Features
 
 ## Product Management
-- Create Product
-- Update Product
-- Delete Product
-- Get Product By ID
-- Get All Products with Pagination & Sorting
-- Search Products with Dynamic Filters
+
+* Create Product
+* Update Product
+* Delete Product
+* Get Product By ID
+* Validate Product Existence
+* Get All Products with Pagination & Sorting
+* Dynamic Product Search
 
 ## Category Management
-- Create Category
-- Update Category
-- Delete Category
-- Get Category By ID / Name
-- Hierarchical Parent-Child Category Support
-- Circular Hierarchy Prevention
-- Prevent Deletion of Parent Categories with Children
 
-## Backend Engineering Features
-- DTO-based Request/Response Architecture
-- Centralized Global Exception Handling
-- Validation using Jakarta Bean Validation
-- SLF4J Structured Logging
-- Swagger/OpenAPI Documentation
-- Unit Testing with JUnit + Mockito
+* Create Category
+* Update Category
+* Delete Category
+* Get Category By ID
+* Get Category By Name
+* Parent-Child Category Hierarchy
+* Circular Hierarchy Prevention
+* Parent Category Deletion Protection
+
+## Performance & Scalability
+
+* Redis Caching for Product Retrieval
+* Reduced Database Load
+* Faster Read Operations
+
+## Microservice Integration
+
+* Eureka Service Discovery Client
+* API Gateway Routing Support
+* Feign Client Compatibility
+* Inter-Service Communication Ready
+
+## Engineering Features
+
+* DTO-Based API Layer
+* Mapper Pattern
+* Global Exception Handling
+* Structured Logging using SLF4J
+* Validation using Jakarta Bean Validation
+* Swagger/OpenAPI Documentation
+* Unit Testing using JUnit & Mockito
 
 ---
 
 # Tech Stack
 
-- **Java 21**
-- **Spring Boot**
-- **Spring Web**
-- **Spring Data JPA**
-- **Hibernate**
-- **MySQL / H2**
-- **Lombok**
-- **Maven**
-- **Swagger / OpenAPI**
-- **JUnit 5**
-- **Mockito**
+* Java 21
+* Spring Boot
+* Spring Web
+* Spring Data JPA
+* Hibernate
+* MySQL
+* Redis
+* Spring Cache
+* Eureka Discovery Client
+* OpenFeign
+* Lombok
+* Maven
+* Swagger / OpenAPI
+* JUnit 5
+* Mockito
 
 ---
 
-# Architecture / Design Highlights
+# Architecture Highlights
 
-- Implemented **Layered Architecture**
-    - Controller Layer
-    - Service Layer
-    - Repository Layer
+## Layered Architecture
 
-- Applied **DTO + Mapper Pattern** to decouple API contract from persistence models
+* Controller Layer
+* Service Layer
+* Repository Layer
 
-- Built **Hierarchical Category Management**
-    - Parent-child relationships
-    - Circular dependency prevention
-    - Business-rule enforced deletion constraints
+## DTO + Mapper Pattern
 
-- Implemented **Dynamic Product Search**
-    - Keyword Search
-    - Category Filter
-    - Price Range Filter
-    - Pagination & Sorting
+Decouples API contracts from persistence entities and improves maintainability.
+
+## Hierarchical Category Design
+
+Supports:
+
+* Parent Categories
+* Child Categories
+* Multi-level Category Trees
+* Circular Dependency Validation
+
+## Dynamic Product Search
+
+Supports:
+
+* Keyword Search
+* Category Filter
+* Price Range Filter
+* Pagination
+* Sorting
+
+## Redis Caching
+
+Product retrieval APIs are cached to reduce repeated database lookups and improve response time.
+
+## Service Discovery
+
+Registered as a Eureka Client for dynamic service registration and discovery.
+
+## API Gateway Ready
+
+Designed to be consumed through a centralized API Gateway with load balancing and routing.
 
 ---
 
@@ -77,17 +123,21 @@ Designed as part of a scalable **microservices-based backend architecture**, thi
 
 ```text
 src/main/java/com/example/ProductService
+
 ├── controllers
 ├── services
 ├── repositories
 ├── models
 ├── dtos
 ├── mappers
+├── specifications
 ├── exceptions
 ├── controllerAdvices
-└── config
+├── config
+└── cache
 
 src/test/java
+
 └── services
 ```
 
@@ -99,18 +149,15 @@ Swagger UI:
 
 http://localhost:8080/swagger-ui/index.html
 
-Interactive API documentation available for all endpoints.
+Provides interactive documentation and API testing support.
 
 ---
 
-# API Endpoints
+# Product APIs
 
-## Product APIs
+## Create Product
 
-### Create Product
-`POST /products`
-
-Request Body:
+POST /products
 
 ```json
 {
@@ -122,33 +169,53 @@ Request Body:
 }
 ```
 
-### Get Product By ID
-`GET /products/{id}`
+## Get Product By ID
 
-### Update Product
-`PATCH /products/{id}`
+GET /products/{id}
 
-### Delete Product
-`DELETE /products/{id}`
+## Validate Product Existence
 
-### Get All Products
-`GET /products?page=0&size=10&sortBy=id&sortDirection=asc`
+GET /products/{id}/exists
 
-### Search Products
-`GET /products/search`
+Response:
+
+```json
+true
+```
+
+or
+
+```json
+false
+```
+
+## Update Product
+
+PATCH /products/{id}
+
+## Delete Product
+
+DELETE /products/{id}
+
+## Get All Products
+
+GET /products?page=0&size=10&sortBy=id&sortDirection=asc
+
+## Search Products
+
+GET /products/search
 
 Example:
 
-`GET /products/search?keyword=iphone&categoryName=Electronics&minPrice=500&maxPrice=2000&page=0&size=10`
+GET /products/search?keyword=iphone&categoryName=Electronics&minPrice=500&maxPrice=2000&page=0&size=10
 
 ---
 
-## Category APIs
+# Category APIs
 
-### Create Category
-`POST /categories`
+## Create Category
 
-Request Body:
+POST /categories
 
 ```json
 {
@@ -158,61 +225,82 @@ Request Body:
 }
 ```
 
-### Get Category By ID
-`GET /categories/{id}`
+## Get Category By ID
 
-### Get Category By Name
-`GET /categories?name=Electronics`
+GET /categories/{id}
 
-### Update Category
-`PATCH /categories/{id}`
+## Get Category By Name
 
-### Delete Category
-`DELETE /categories/{id}`
+GET /categories?name=Electronics
 
-### Get All Categories
-`GET /categories?page=0&size=10&sortBy=id&sortDirection=asc`
+## Update Category
+
+PATCH /categories/{id}
+
+## Delete Category
+
+DELETE /categories/{id}
+
+## Get All Categories
+
+GET /categories?page=0&size=10&sortBy=id&sortDirection=asc
 
 ---
 
 # Exception Handling
 
-Centralized exception handling via `@ControllerAdvice`.
+Centralized exception handling implemented using @ControllerAdvice.
 
-Handles:
+Handled Scenarios:
 
-- Invalid Product / Category IDs
-- Duplicate Product / Category Creation
-- Invalid Parent Category Assignment
-- Circular Category Hierarchy
-- Parent Category Deletion Restriction
-- Validation Errors
-- Unexpected Runtime Exceptions
+* Product Not Found
+* Invalid Product Id
+* Duplicate Product Creation
+* Invalid Category Name
+* Duplicate Category Creation
+* Invalid Parent Category
+* Circular Category Hierarchy
+* Parent Category Deletion Restriction
+* Validation Errors
+* Unexpected Runtime Exceptions
 
-Example Error Response:
+Example Response:
 
 ```json
 {
   "timestamp": "2026-04-13T10:30:00",
   "status": 404,
-  "error": "Invalid Product Id",
+  "error": "Product Not Found",
   "message": "Product with id 10 not found"
 }
 ```
 
 ---
 
+# Redis Caching
+
+Caching is implemented for frequently accessed product APIs.
+
+Benefits:
+
+* Reduced Database Queries
+* Lower Response Latency
+* Improved Scalability
+* Better Throughput Under Load
+
+---
+
 # Testing
 
-Unit Tests implemented for Service Layer using:
+Unit tests implemented using:
 
-- **JUnit 5**
-- **Mockito**
+* JUnit 5
+* Mockito
 
-Test Coverage Includes:
+Coverage Includes:
 
-- ProductServiceImplTest
-- CategoryServiceImplTest
+* ProductServiceImplTest
+* CategoryServiceImplTest
 
 Run Tests:
 
@@ -224,79 +312,104 @@ mvn test
 
 # Logging Strategy
 
-Implemented structured logging using **SLF4J**.
+Structured logging implemented using SLF4J.
 
-| Level | Usage |
-|--------|-------|
-| INFO | Create / Update Operations |
-| DEBUG | Fetch / Search Operations |
-| WARN | Invalid Inputs / Missing Resources |
-| ERROR | Unexpected Runtime Failures |
+| Level | Purpose                              |
+| ----- | ------------------------------------ |
+| INFO  | Create / Update / Delete Operations  |
+| DEBUG | Fetch / Search Operations            |
+| WARN  | Invalid Requests / Missing Resources |
+| ERROR | Unexpected Failures                  |
+
+---
+
+# Service Registration
+
+This service registers itself with Eureka Service Discovery.
+
+Example Registration:
+
+```text
+PRODUCT-SERVICE
+```
+
+Enables:
+
+* Dynamic Service Discovery
+* Client-side Load Balancing
+* API Gateway Routing
 
 ---
 
 # How to Run
 
-Clone Repository:
+Clone Repository
 
 ```bash
 git clone https://github.com/ekanath-smr/ecommerce-product-service.git
 ```
 
-Navigate:
+Navigate
 
 ```bash
 cd ecommerce-product-service
 ```
 
-Build:
+Build
 
 ```bash
 mvn clean install
 ```
 
-Run:
+Run
 
 ```bash
 mvn spring-boot:run
 ```
 
-Application Starts At:
+Application:
 
-`http://localhost:8080`
+```text
+http://localhost:8080
+```
 
 Swagger:
 
-`http://localhost:8080/swagger-ui/index.html`
+```text
+http://localhost:8080/swagger-ui/index.html
+```
 
 ---
 
 # Future Enhancements
 
-- Integration Testing
-- Docker Containerization
-- API Gateway Integration
-- Eureka Service Discovery
-- Distributed Tracing
-- JWT Authentication / Authorization
-- Redis Caching
-- Elasticsearch for Advanced Search
+* Kafka Event Publishing
+* Distributed Tracing
+* Elasticsearch Integration
+* Integration Testing
+* Docker Containerization
+* Kubernetes Deployment
+* Observability with Prometheus & Grafana
 
 ---
 
-# Resume-Worthy Highlights
+# Resume Highlights
 
-This project demonstrates proficiency in:
+This project demonstrates:
 
-- REST API Design
-- Backend Architecture
-- Spring Boot Best Practices
-- JPA/Hibernate Modeling
-- Pagination / Filtering / Sorting
-- Exception Handling
-- Unit Testing
-- Microservice-Oriented Design
-- Production-Style Code Organization
+* Microservices Architecture
+* Spring Boot Best Practices
+* REST API Design
+* Service Discovery
+* API Gateway Integration
+* Redis Caching
+* DTO & Mapper Pattern
+* Dynamic Search using Specifications
+* Hierarchical Data Modeling
+* Exception Handling
+* Logging & Observability
+* Unit Testing
+* Production-Ready Backend Development
 
 ---
 
@@ -304,7 +417,7 @@ This project demonstrates proficiency in:
 
 **Ekanath S M R**
 
-Backend Engineer | Java + Spring Boot Developer
+Java Backend Engineer | Spring Boot | Microservices | Distributed Systems
 
-GitHub:  
+GitHub:
 https://github.com/ekanath-smr
